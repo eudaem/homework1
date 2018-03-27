@@ -9,13 +9,20 @@
 #include<io.h>
 
 using namespace std;
+int begFlag = 1;
+
+typedef struct {
+	unsigned int charNum;
+	unsigned int lineNum;
+	unsigned int wordNum;
+}amount;
 
 class word {
 
-private:
+public:
 	string wordStr;
 	unsigned int freq;
-public:
+
 	word() = default;
 	word(string str) {
 		wordStr = str;
@@ -65,9 +72,78 @@ public:
 	}
 };
 
+
+class phrase {
+
+public:
+	//string phrStr;
+	unsigned int freq;
+	word part1, part2;
+
+
+	//lack a default constructor
+
+	phrase(word part1, word part2) {
+		this->part1 = part1;
+		this->part2 = part2;
+		//phrStr = str;
+		freq = 1;
+	}
+	/*
+	string getPhrStr() {
+		return phrStr;
+	}
+	*/
+	word getPart1() {
+		return part1;
+	}
+
+	word getPart2() {
+		return part2;
+	}
+
+	unsigned int getFreq() {
+		return freq;
+	}
+
+	void addFreq() {
+		freq++;
+	}
+
+	void resetPhrase(phrase &obj) {
+
+		//string objStr = obj.getPhrStr();
+
+		word objPart1 = obj.getPart1();   
+		word objPart2 = obj.getPart2();  
+		// '||' is a short circuit operator
+		if (objPart1.getWordStr() < this->part1.getWordStr() || objPart2.getWordStr() < this->part2.getWordStr()) {
+			this->part1 = objPart1;
+			this->part2 = objPart2;
+		}
+	}
+
+	bool operator == (const phrase &obj) const {
+
+		word objPart1 = obj.part1, objPart2 = obj.part2;
+		return (part1 == objPart1 && part2 == objPart2);
+	}
+
+	void printPhrase(ofstream &output) {
+		output << part1.getWordStr()+" "+part2.getWordStr() << "\t" << freq << endl;
+	}
+};
+
+
 bool wordCompare(word former, word latter) {
 	return former.getFreq() > latter.getFreq();
 }
+
+bool phraseCompare(phrase former, phrase latter) {
+	return former.getFreq() > latter.getFreq();
+}
+
+
 
 void examineNewWord(vector<word> &wvec, word &newWord) {
 
@@ -75,28 +151,66 @@ void examineNewWord(vector<word> &wvec, word &newWord) {
 	itr = find(beg, end, newWord);    //is there any repition?
 
 	if (itr != end) {                 // this word already exists in wvec
-		itr->resetWordStr(newWord.getWordStr());
-		itr->addFreq();
+		itr->resetWordStr(newWord.wordStr);
+		itr->freq++;
 	}
 	else {
 		wvec.push_back(newWord);
 	}
 }
 
+void examineNewPhr(vector<phrase> &pvec, phrase &newPhrase) {
+
+	vector<phrase>::iterator beg = pvec.begin(), end = pvec.end(), itr;
+	itr = find(beg, end, newPhrase);   ////is there any repition?
+
+	if (itr != end) {
+		itr->resetPhrase(newPhrase);
+		itr->freq++;
+	}
+	else {
+		pvec.push_back(newPhrase);
+	}
+}
+
 
 /* collect all expressions that match the definition of word in the parameter string */
-void getNewExpr(string &str,vector<word> &wvec) {
+void getNewExpr(string &str, vector<word> &wvec, vector<phrase> &pvec, amount &result) {
 
 	word newWord;
 	string wordPattern("[[:alnum:]]{4}[[:alnum:]]*");
 	regex reg(wordPattern);
-	
 
+	//intermediate variables in generating a new phrase
+	
+	//string::size_type pos1, pos2;
+	string newPhrStr = "\0";
+	word part1("\0"), part2("\0");
+	phrase newPhrase( part1, part2);
+	/*
+	  collect a word in advance, then combine two words and the substring 
+	  between them into  a phrase
+	*/
 	for (sregex_iterator it(str.begin(), str.end(), reg), end_it;
 		it != end_it; it++) {
 		
+		result.wordNum++;
 		newWord = word(it->str());
 		examineNewWord(wvec, newWord);
+
+		if (begFlag) {
+			wvec.push_back(newWord);
+			begFlag = 0;
+			part1 = newWord;
+		}
+		else {
+			                  
+			part2 = newWord;
+			newPhrase = phrase(part1, part2);
+			examineNewPhr(pvec, newPhrase);
+			                  //pos1 = pos2;
+			part1 = part2;
+		}
 		
 	}
 }
@@ -137,7 +251,7 @@ unsigned long getLineNum(string filename) {
   process one file, update the amount of characters and the amount of lines, 
   collect all expressions that match the word definition into wvec.
 */
-void fileProcess(string filename, unsigned long &charNum, unsigned long &lineNum, vector<word> &wvec) {
+void fileProcess(string filename, amount &result, vector<word> &wvec, vector<phrase> &pvec) {
 
 	ifstream input;
 	stringstream buffer;
@@ -162,13 +276,13 @@ void fileProcess(string filename, unsigned long &charNum, unsigned long &lineNum
 		srcStr = buffer.str();
 
 		// update the amount of characters
-		charNum += getCharNum(srcStr);
+		result.charNum += getCharNum(srcStr);
 
 		//update the amount of lines
-		lineNum += getLineNum(filename);
+		result.lineNum += getLineNum(filename);
 
 		//update the wvec
-		getNewExpr(srcStr, wvec);
+		getNewExpr(srcStr, wvec, pvec,result);
 	
 
 	input.close();
@@ -176,31 +290,54 @@ void fileProcess(string filename, unsigned long &charNum, unsigned long &lineNum
 
 
 /* print the results in the required format*/
-void getResult(const char* resfile, unsigned long &charNum, unsigned long &lineNum, vector<word> &wvec) {
+void getResult(const char* resfile, amount &result, vector<word> &wvec, vector<phrase> &pvec) {
 
-	//sort wvec in ASCII order
-	vector<word>::iterator beg = wvec.begin(), end = wvec.end(), itr;
-	sort(beg, end, wordCompare);
-
-	ofstream output(resfile);
-	 
 	auto wvecSize = wvec.size();
-	output << "char_number :" << charNum << endl;
-	output << "line_number :" << lineNum << endl;
-	output << "word_number :" << wvecSize << endl;
+	auto pvecSize = pvec.size();
+	ofstream output(resfile);
 
+	output << "char_number :" << result.charNum << endl;
+	output << "line_number :" << result.lineNum << endl;
+	output << "word_number :" << result.wordNum << endl;
+
+	//sort wvec in descending frequency order
+	vector<word>::iterator wbeg = wvec.begin(), wend = wvec.end(), witr;
+	sort(wbeg, wend, wordCompare);
+
+	output << " " << endl;
+	output << "the top ten frequency of words" << endl;
 	if(wvecSize){
 
 		if (wvecSize < 10) {
-			for (itr = beg; itr != end; itr++) {
-				itr->printWord(output);
+			for (witr = wbeg; witr != wend; witr++) {
+				witr->printWord(output);
 			}
 		}
-		
 		else {
-			vector<word>::iterator last = beg + 10;
-			for (itr = beg; itr != last; itr++) {
-				itr->printWord(output);
+			vector<word>::iterator wlast = wbeg + 10;
+			for (witr = wbeg; witr != wlast; witr++) {
+				witr->printWord(output);
+			}
+		}
+	}
+
+	//sort pvec in descending frequency order
+	vector<phrase>::iterator pbeg = pvec.begin(), pend = pvec.end(), pitr;
+	sort(pbeg, pend, phraseCompare);
+
+	output << " " << endl;
+	output << "the top ten frequency of phrases" << endl;
+	if (pvecSize) {
+
+		if (pvecSize < 10) {
+			for (pitr = pbeg; pitr != pend; pitr++) {
+				pitr->printPhrase(output);
+			}
+		}
+		else {
+			vector<phrase>::iterator plast = pbeg + 10;
+			for (pitr = pbeg; pitr != plast; pitr++) {
+				pitr->printPhrase(output);
 			}
 		}
 	}
@@ -246,30 +383,32 @@ int getAllFiles(string path, vector<string> &files)
 
 int main(int argc, char* argv[]) {
 
-	unsigned long charNum = 0;
-	unsigned long lineNum = 0;
+	amount  result;
+	result.charNum = 0;
+	result.lineNum = 0;
+	result.wordNum = 0;
 	vector<word> wvec;
+	vector<phrase> pvec;
 	int dirFlag;
 	vector<string> fvec;
 
-	//string path = "D:/Visual Studio/testDir";
+	string path = "05.txt";
 	
-	const char* resFile = "Result.txt";
+	const char* resFile = "AllFiles.txt";
 
-	dirFlag = getAllFiles(argv[1], fvec);
+	dirFlag = getAllFiles(path, fvec);
 
 	if (dirFlag == 0) {
 
 		vector<string>::iterator end = fvec.end(), it;
 		for (it = fvec.begin(); it != end; it++) {
-			fileProcess(*it, charNum, lineNum, wvec);
+			fileProcess(*it, result, wvec, pvec);
 		}
 	}
 	else {
-		fileProcess(argv[1], charNum, lineNum, wvec);
+		fileProcess(path, result, wvec, pvec);
 	}
 	
-	getResult(resFile, charNum, lineNum, wvec);
-
+	getResult(resFile, result, wvec, pvec);
 	system("pause");
 }
