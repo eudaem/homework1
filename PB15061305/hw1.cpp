@@ -71,14 +71,15 @@ int HandleString(string &s) {
 	return 1;
 }
 
-void display_words_map(unordered_map<string, int> &words_map, unordered_map<string, string> &exp_map) {
+void display_words_map(string path, unordered_map<string, int> &words_map, unordered_map<string, string> &exp_map) {
 	//display the TOP10 words
  	vector<string> keylist(10);
 	vector<int> numlist(10);
 	vector<int>::iterator least;
+	unordered_map<string, int>::const_iterator map_it;
+	ofstream  outpath(path, ios::app);
 
 	int count = 0, index = 0;
-	unordered_map<string, int>::const_iterator map_it;
 	//find top10
 	for (map_it = words_map.begin(); map_it != words_map.end(); map_it++) {
 		if (count < 10) {
@@ -96,18 +97,40 @@ void display_words_map(unordered_map<string, int> &words_map, unordered_map<stri
 			}
 		}
 	}
-
-	for (int i = 0; i < 10; i++) {
-		cout << exp_map[keylist[i]] << ": " << numlist[i] << endl;
+	outpath << "the top ten frequency of word : " << endl;
+	//sort by number
+	int i, j = 0;
+	int temp;
+	string Stemp;
+	int max;
+	int Order[10] = { -1 };
+	for (i = 0; i < 10; i++) {
+		max = i;
+		for (j = i + 1; j < 10; j++) {
+			max = numlist[max] > numlist[j] ? max : j;
+		}
+		temp = numlist[i];
+		numlist[i] = numlist[max];
+		numlist[max] = temp;
+		Stemp = keylist[i];
+		keylist[i] = keylist[max];
+		keylist[max] = Stemp;
 	}
+	//Write to file
+	for (i = 0; i < 10; i++) {
+		outpath << exp_map[keylist[i]] << ": " << numlist[i] << endl;
+	}
+	outpath << endl << endl;
+	outpath.close();
 }
 
-void display_phrase_map(unordered_map<string, int> &phrase_map, unordered_map<string, string> &exp_map) {
+void display_phrase_map(string path, unordered_map<string, int> &phrase_map, unordered_map<string, string> &exp_map) {
 	//display the TOP10 phrase
 	vector<string> keylist(10);
 	vector<int> numlist(10);
 	vector<int>::iterator least;
 	unordered_map<string, int>::const_iterator map_it;
+	ofstream  outpath(path, ios::app);
 
 	string key1, key2, key;
 	char c;
@@ -131,7 +154,27 @@ void display_phrase_map(unordered_map<string, int> &phrase_map, unordered_map<st
 			}
 		}
 	}
-	for (int i = 0; i < 10; i++) {
+	//sort by number
+	int i;
+	int temp;
+	string Stemp;
+	int max;
+	int Order[10] = { -1 };
+	for (i = 0; i < 10; i++) {
+		max = i;
+		for (j = i + 1; j < 10; j++) {
+			max = numlist[max] > numlist[j] ? max : j;
+		}
+		temp = numlist[i];
+		numlist[i] = numlist[max];
+		numlist[max] = temp;
+		Stemp = keylist[i];
+		keylist[i] = keylist[max];
+		keylist[max] = Stemp;
+	}
+	//Write to file
+	outpath << "the top ten frequency of phrase :" << endl;
+	for (i = 0; i < 10; i++) {
 		key1 = key2 = "";
 		key = keylist[i];
 		len = key.size();
@@ -148,8 +191,10 @@ void display_phrase_map(unordered_map<string, int> &phrase_map, unordered_map<st
 			key2 += c;
 			j++;	
 		}
-		cout << exp_map[key1] << " " << exp_map[key2]<< ": " << numlist[i] << endl;
+		outpath << exp_map[key1] << " " << exp_map[key2]<< ": " << numlist[i] << endl;
 	}
+	outpath << endl << endl;
+	outpath.close();
 }
 
 void Display_map(unordered_map<string, int> &wmap) {
@@ -174,10 +219,10 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 	string st = "", sp = "", se = "";
 	string Ss = "";
 	openfile.open(s, ios::in);
-	if (openfile.fail()) {
+	if (openfile.fail()) {//whether there is a file error
 		return 0;
 	}
-	nline += 1;
+	
 	while (openfile.get(c)) {
 		//count characters
 		if (c >= 32 && c <= 127) {
@@ -212,8 +257,10 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 			st = "";
 		}
 	}
+
 	//consider that the last char is number or alphabet
 	if (!st.empty()) {
+		nline++;
 		HandleString(st);
 		if (st.size() >= 4) {
 			words_map[st]++;
@@ -241,6 +288,8 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 int main()
 {
 	string filepath = "I:/现代软件工程/TestSet";
+	string outpath = filepath + "/myresult.txt";
+	ofstream  outfile(outpath, ios::app);
 	vector<string> files;
 	GetAllFiles(filepath, files);
 	int size = files.size();
@@ -253,16 +302,13 @@ int main()
 
 	for (int i = 0; i < size; i++){
 		OneFileCount(files[i], nchar, nline, nword, words_map, phrase_map, exp_map);
-		//cout << i << endl;
 	}
 
-	cout << "nchar: " << nchar << endl;
-	cout<<"nline: " << nline << endl;
-	cout << "nwords: " << nword << endl;
-	cout << "---------------words map------------------" << endl;
-	display_words_map(words_map,exp_map);
-	cout << "---------------phrase map------------------" << endl;
-	display_phrase_map(phrase_map,exp_map);
+	outfile << "char_number: " << nchar << endl;
+	outfile <<"line_number: " << nline << endl;
+	outfile << "word_number: " << nword << endl << endl << endl;
+	display_words_map(outpath, words_map,exp_map);
+	display_phrase_map(outpath, phrase_map,exp_map);
 
 	/*cout << "---------------words map------------------" << endl;
 	Display_map(words_map);
@@ -271,6 +317,8 @@ int main()
 	cout << "---------------phrase map------------------" << endl;
 	Display_map(phrase_map);*/
 
+
+	outfile.close();
 	cout << "ok" << endl;
 	system("pause");
 	return 0;
