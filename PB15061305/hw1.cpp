@@ -1,8 +1,14 @@
 // WordFrequency.cpp 
-//Author: Liu Ze
-//Mail: liuze@mail.ustc.edu.cn
-//Time: 2018.3.25 16:51
-//
+// Author: Liu Ze
+// Mail: liuze@mail.ustc.edu.cn
+// Time: 2018.3.25 16:51
+/*  Finish the windows version:
+    bulid and then run like this:
+    ```
+    WordFrequency.exe I:/TestSet
+    ```
+    make sure that the delimiter in file path is / or \\
+*/
 
 #include<io.h>
 #include <fstream>  
@@ -222,10 +228,10 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 	if (openfile.fail()) {//whether there is a file error
 		return 0;
 	}
-	
+	nline++;
 	while (openfile.get(c)) {
 		//count characters
-		if (c >= 32 && c <= 127) {
+		if (c >= 32 && c <= 126) {
 			nchar++;
 		}
 		if (c == '\n') {
@@ -260,7 +266,6 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 
 	//consider that the last char is number or alphabet
 	if (!st.empty()) {
-		nline++;
 		HandleString(st);
 		if (st.size() >= 4) {
 			words_map[st]++;
@@ -285,9 +290,12 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
-	string filepath = "I:/现代软件工程/TestSet";
+
+	string filepath = "";
+	filepath = argv[1];
+
 	string outpath = filepath + "/myresult.txt";
 	ofstream  outfile(outpath, ios::app);
 	vector<string> files;
@@ -323,3 +331,4 @@ int main()
 	system("pause");
 	return 0;
 }
+
