@@ -1,7 +1,7 @@
 // WordFrequency.cpp 
 //Author: Liu Ze
 //Mail: liuze@mail.ustc.edu.cn
-//Time: 2018.3.25 16:51
+//Time: 2018.3.28 11:07
 //
 #ifdef __linux__
 #include <dirent.h>
@@ -9,7 +9,6 @@
 #ifdef WIN32
 #include<io.h>
 #endif
-
 
 #include <fstream>  
 #include <string>  
@@ -93,11 +92,28 @@ int HandleString(string &s) {
 		}
 		i--;
 	}
-	if (i < 0) {
+	int j = 0, k = 0;
+	int count = 0;
+	while (j <= i) {
+		k = j;
+		count = 0;
+		while (k <= i) {
+			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+				count++;
+				k++;
+			}
+		}
+		if (count >= 4) {
+			break;
+		}
+		j = k + 1;
+	}
+	if (i < 0 || count < 4) {
 		s = "";
 	}
 	else {
 		s.erase(s.begin() + i + 1, s.end());
+		s.erase(0, j);
 		transform(s.begin(), s.end(), s.begin(), (int(*)(int))tolower);
 	}
 	return 1;
@@ -236,6 +252,7 @@ void Display_map(unordered_map<string, int> &wmap) {
 		cout << "(\"" << map_it->first << "\"," << map_it->second << ")" << endl;
 	}
 }
+
 void Display_map2(unordered_map<string, string> &wmap) {
 	//print the expression map 
 	unordered_map<string, string>::const_iterator map_it;
@@ -260,7 +277,7 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 		if (c >= 32 && c <= 126) {
 			nchar++;
 		}
-		if (c == '\n') {
+		else if (c == '\n') {
 			nline++;
 		}
 		//count words and phrases
@@ -271,6 +288,7 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 			se = st;
 			HandleString(st);
 			if (st.length() >= 4) {
+				nword++;
 				words_map[st]++;
 				//whether there exits st before
 				if (exp_map.count(st) == 1) {
@@ -279,7 +297,6 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 				else {
 					exp_map[st] = se;
 				}
-				nword++;
 				if (!sp.empty()) {
 					Ss = sp + ' ' + st;
 					phrase_map[Ss]++;
@@ -295,13 +312,13 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 		HandleString(st);
 		if (st.size() >= 4) {
 			words_map[st]++;
+			nword++;
 			if (exp_map.count(st) == 1) {
 				exp_map[st] = exp_map[st] < se ? exp_map[st] : se; //store the little string
 			}
 			else {
 				exp_map[st] = se;
 			}
-			nword++;
 			if (!sp.empty()) {
 				Ss = sp + ' ' + st;
 				phrase_map[Ss]++;
@@ -314,7 +331,6 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 	return 1;
 
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -344,16 +360,7 @@ int main(int argc, char *argv[])
 	display_words_map(outpath, words_map,exp_map);
 	display_phrase_map(outpath, phrase_map,exp_map);
 
-	/*cout << "---------------words map------------------" << endl;
-	Display_map(words_map);
-	cout << "---------------exp map------------------" << endl;
-	Display_map2(exp_map);
-	cout << "---------------phrase map------------------" << endl;
-	Display_map(phrase_map);*/
-
-
 	outfile.close();
 	cout << "ok" << endl;
 	return 0;
 }
-
