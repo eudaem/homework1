@@ -82,7 +82,6 @@ int HandleString(string &s) {
 	if (s.empty()) {
 		return 0;
 	}
-
 	int i = s.size() - 1;
 	char c;
 	while (i >= 0) {
@@ -92,28 +91,12 @@ int HandleString(string &s) {
 		}
 		i--;
 	}
-	int j = 0, k = 0;
-	int count = 0;
-	while (j <= i) {
-		k = j;
-		count = 0;
-		while (k <= i) {
-			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-				count++;
-				k++;
-			}
-		}
-		if (count >= 4) {
-			break;
-		}
-		j = k + 1;
-	}
-	if (i < 0 || count < 4) {
+	
+	if (i < 0 ) {
 		s = "";
 	}
 	else {
 		s.erase(s.begin() + i + 1, s.end());
-		s.erase(0, j);
 		transform(s.begin(), s.end(), s.begin(), (int(*)(int))tolower);
 	}
 	return 1;
@@ -264,7 +247,7 @@ void Display_map2(unordered_map<string, string> &wmap) {
 int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<string, int> &words_map, unordered_map<string, int> &phrase_map, unordered_map<string,string> &exp_map) {
 	fstream openfile;
 	char c;
-	
+	int count = 0;
 	string st = "", sp = "", se = "";
 	string Ss = "";
 	openfile.open(s, ios::in);
@@ -282,7 +265,17 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 		}
 		//count words and phrases
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
-			st += c;
+			if (!(c >= '0' && c <= '9')) {
+				st += c;
+				count++;
+			}
+			else if (count < 4) {
+				st = "";
+				count = 0;
+			}
+			else {
+				st += c;
+			}
 		}
 		else {
 			se = st;
@@ -304,6 +297,7 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 				sp = st;
 			}
 			st = "";
+			count = 0;
 		}
 	}
 
