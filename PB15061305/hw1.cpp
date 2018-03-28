@@ -1,16 +1,16 @@
 // WordFrequency.cpp 
-// Author: Liu Ze
-// Mail: liuze@mail.ustc.edu.cn
-// Time: 2018.3.25 16:51
-/*  Finish the windows version:
-    bulid and then run like this:
-    ```
-    WordFrequency.exe I:/TestSet
-    ```
-    make sure that the delimiter in file path is / or \\
-*/
-
+//Author: Liu Ze
+//Mail: liuze@mail.ustc.edu.cn
+//Time: 2018.3.25 16:51
+//
+#ifdef __linux__
+#include <dirent.h>
+#endif
+#ifdef WIN32
 #include<io.h>
+#endif
+
+
 #include <fstream>  
 #include <string>  
 #include <vector>  
@@ -20,6 +20,7 @@
 #include <algorithm>
 using namespace std;
 
+#ifdef WIN32
 void GetAllFiles(string path, vector<string>& files)
 {
 
@@ -49,6 +50,31 @@ void GetAllFiles(string path, vector<string>& files)
 	}
 
 }
+#endif
+
+#ifdef __linux__
+void GetAllFiles(string path, vector<string>& files)
+{
+	string name;
+	DIR* dir = opendir(path.c_str());//打开指定目录  
+    dirent* p = NULL;//定义遍历指针  
+    while((p = readdir(dir)) != NULL)//开始逐个遍历  
+    {  
+        //这里需要注意，linux平台下一个目录中有"."和".."隐藏文件，需要过滤掉  
+        if(p->d_name[0] != '.')//d_name是一个char数组，存放当前遍历到的文件名  
+        {  
+            string name = path + "/" + string(p->d_name);  
+            files.push_back(name);
+			//cout << name << endl;
+			if(p->d_type == 4){
+				GetAllFiles(name, files);
+			}
+        }  
+    }  
+    closedir(dir);//关闭指定目录  
+
+}
+#endif
 
 int HandleString(string &s) {
 	//hanlde the string to standard form
@@ -328,7 +354,6 @@ int main(int argc, char *argv[])
 
 	outfile.close();
 	cout << "ok" << endl;
-	system("pause");
 	return 0;
 }
 
