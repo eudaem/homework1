@@ -19,10 +19,10 @@ typedef struct {
 
 class word {
 
-public:
+private:
 	string wordStr;
 	unsigned int freq;
-
+public:
 	word() = default;
 	word(string str) {
 		wordStr = str;
@@ -49,14 +49,14 @@ public:
 
 	/*this requires establishing a new word() as soon as
 	the iterator gives a new matched expression*/
-
+	/*
 	bool operator == (const word &obj) const {
 
 		int flag = 0;
 		int i, thisLen = wordStr.length(), objLen = obj.wordStr.length();
 		for (i = 0; i < thisLen && i < objLen; i++) {
 
-			if (wordStr[i] != obj.wordStr[i]) {
+			if (wordStr[i] != obj.wordStr[i] && abs(wordStr[i] - obj.wordStr[i]) != 32) {
 
 				if (isalpha(wordStr[i]) || isalpha(obj.wordStr[i])) {
 					flag = 1;
@@ -65,6 +65,37 @@ public:
 			}
 		}
 		return (flag == 0) ? true : false;
+	}
+	*/
+	bool operator == (const word &obj) const {
+		string word1 = this->wordStr, word2 = obj.wordStr;
+		int i = word1.length() - 1;
+		int j = word2.length() - 1;
+		while (i >= 0)
+		{
+			if (word1[i] >= '0'&&word1[i] <= '9')
+				word1[i] = '\0';
+			else break;
+			i--;
+		}
+		while (j >= 0)
+		{
+			if (word2[j] >= '0'&&word2[j] <= '9')
+				word2[j] = '\0';
+			else break;
+			j--;
+		}
+		if (i == j) {
+
+			for (int t = 0; t <= i; t++) {
+				if (word1[t] != word2[t] && abs(word1[t] - word2[t]) != 32)
+					return false;
+			}
+
+
+		}
+		else return false;
+		return true;
 	}
 
 	void printWord(ofstream &output) {
@@ -75,12 +106,12 @@ public:
 
 class phrase {
 
-public:
+private:
 	//string phrStr;
 	unsigned int freq;
 	word part1, part2;
 
-
+public:
 	//lack a default constructor
 
 	phrase(word part1, word part2) {
@@ -130,7 +161,10 @@ public:
 	}
 
 	void printPhrase(ofstream &output) {
-		output << part1.getWordStr()+" "+part2.getWordStr() << "\t" << freq << endl;
+		string word1 = part1.getWordStr(), word2 = part2.getWordStr();
+		word1 < word2 ?
+			output << word1 + " " + word2 << "\t" << freq << endl :
+			output << word2 + " " + word1 << "\t" << freq << endl;
 	}
 };
 
@@ -151,8 +185,8 @@ void examineNewWord(vector<word> &wvec, word &newWord) {
 	itr = find(beg, end, newWord);    //is there any repition?
 
 	if (itr != end) {                 // this word already exists in wvec
-		itr->resetWordStr(newWord.wordStr);
-		itr->freq++;
+		itr->resetWordStr(newWord.getWordStr());
+		itr->addFreq();
 	}
 	else {
 		wvec.push_back(newWord);
@@ -166,7 +200,7 @@ void examineNewPhr(vector<phrase> &pvec, phrase &newPhrase) {
 
 	if (itr != end) {
 		itr->resetPhrase(newPhrase);
-		itr->freq++;
+		itr->addFreq();
 	}
 	else {
 		pvec.push_back(newPhrase);
@@ -178,7 +212,7 @@ void examineNewPhr(vector<phrase> &pvec, phrase &newPhrase) {
 void getNewExpr(string &str, vector<word> &wvec, vector<phrase> &pvec, amount &result) {
 
 	word newWord;
-	string wordPattern("[[:alnum:]]{4}[[:alnum:]]*");
+	string wordPattern("[[:alpha:]]{4}[[:alnum:]]*");
 	regex reg(wordPattern);
 
 	//intermediate variables in generating a new phrase
@@ -392,7 +426,7 @@ int main(int argc, char* argv[]) {
 	int dirFlag;
 	vector<string> fvec;
 
-	string path = "05.txt";
+	string path = "2消失的密室.txt";
 	
 	const char* resFile = "AllFiles.txt";
 
