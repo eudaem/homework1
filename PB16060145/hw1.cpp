@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
 
 	string path = "05.txt";
 
-	const char* resFile = "AllFiles.txt";
+	const char* resFile = "Result.txt";
 
 	dirFlag = getAllFiles(argv[1], fvec);
 
