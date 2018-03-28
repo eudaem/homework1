@@ -193,7 +193,7 @@ bool phrase_sorted = false;
 int elfhash(const string& s) {
 	unsigned long h = 0;
 	unsigned long g;
-	for (int i = 0; i < s.size(); i++) {
+	for (unsigned int i = 0; i < s.size(); i++) {
 		h = (h << 4) + s[i];
 		g = h & 0xF0000000L;
 		if (g) {
@@ -208,7 +208,7 @@ int elfhash(const string& s) {
 int jshash(const string& s) {
 	int hash = 0;
 
-	for (int i = 0; i < s.size(); i++) {
+	for (unsigned int i = 0; i < s.size(); i++) {
 		hash ^= (hash << 5) + (int)s[i] + (hash >> 2);
 	}
 
@@ -220,7 +220,7 @@ int fnvhash(const string& s) {
 	int fnvprime = 0x811C9DC5;
 	int hash = 0;
 
-	for (int i = 0; i < s.size(); i++) {
+	for (unsigned int i = 0; i < s.size(); i++) {
 		hash *= fnvprime;
 		hash ^= (int)s[i];
 	}
@@ -233,7 +233,7 @@ int bknrhash(const string& s){
 	unsigned int seed = 131; // 31 131 1313 13131 131313 etc..
 	unsigned int hash = 0;
 
-	for (int i = 0; i < s.size(); i++) {
+	for (unsigned int i = 0; i < s.size(); i++) {
 		hash = hash * seed + s[i];
 	}
 
