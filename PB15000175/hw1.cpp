@@ -10,6 +10,10 @@ using namespace std;
 void SearchFiles(char* dir,string filename[],int& fileNum);
 void ReadFile(FILE *fp, unordered_map<string,int>& wordValueMap,unordered_map<string, string>& wordNameMap,int& chrtCount,int& wordCount,int& lineCount);
 void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, int chrtCount, int wordCount, int lineCount);
+void GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, string topTenWordName[],int topTenWordNum[]);
+void GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPhraseName[], int topTenPhraseNum[],int wordCount);
+
+string allWords[20000000];
 
 int main(int arc,char* args[])
 {
@@ -120,16 +124,16 @@ void ReadFile(FILE *fp, unordered_map<string, int>& wordValueMap, unordered_map<
 						break;
 				if (i >= 4)
 				{
-					wordCount++;
-
 					for ( j = word.length() - 1; word[j] >= 48 && word[j] <= 57; j--);
 					string newWord(word, 0, j + 1);
 					for (j = 0; j < newWord.length(); j++)
 						if (newWord[j] >= 65 && newWord[j] <= 90)
 							newWord[j] = newWord[j] + 32;
 
-					itValue = wordValueMap.find(newWord);
+					allWords[wordCount] = newWord;
+					wordCount++;
 
+					itValue = wordValueMap.find(newWord);
 					if (itValue == wordValueMap.end())
 						wordValueMap.insert(pair<string, int>(newWord, 1));
 					
@@ -157,11 +161,11 @@ void ReadFile(FILE *fp, unordered_map<string, int>& wordValueMap, unordered_map<
 
 void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, int chrtCount, int wordCount, int lineCount)
 {
-	unordered_map<string, int>::iterator itValue = wordValueMap.begin();
-	unordered_map<string, string>::iterator itName;
-	string topTenName[10];
-	int topTenValue[10];
-	int i,j;
+	string topTenWordName[10];
+	int topTenWordNum[10];
+	string topTenPhraseName[10];
+	int topTenPhraseNum[10];
+	int i;
 
 	os << "Char_Number: " << chrtCount << endl;
 	os << "Line_Number: " << lineCount << endl;
@@ -169,40 +173,116 @@ void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_
 	os << endl;
 	os << "The top ten frequency of words:" << endl;
 
+	GetTopTenWords(wordValueMap,wordNameMap,topTenWordName,topTenWordNum);
+	for (i = 0; i < 10; i++)
+		os << "<" << topTenWordName[i] << ">: " << topTenWordNum[i] << endl;
+
+	os << endl;
+	os << "The top ten frequenzy of phrases:" << endl;
+
+	GetTopTenPhrases(wordNameMap, topTenPhraseName, topTenPhraseNum, wordCount);
+	for (i = 0; i < 10; i++)
+		os << "<" << topTenPhraseName[i] << ">: " << topTenPhraseNum[i] << endl;
+}
+
+void GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, string topTenWordName[], int topTenWordNum[])
+{
+	unordered_map<string, int>::iterator itValue = wordValueMap.begin();
+	unordered_map<string, string>::iterator itName;
+	int i, j;
 	for (i = 0; i < 10; i++)
 	{
-		topTenValue[i] = 0;
-		topTenName[i] = "\0";
+		topTenWordNum[i] = 0;
+		topTenWordName[i] = "\0";
 	}
 
 	while (itValue != wordValueMap.end())
 	{
 		i = 9;
 
-		while (itValue->second > topTenValue[i] && i >= 0)
+		while (itValue->second > topTenWordNum[i] && i >= 0)
 			i--;
 
 		if (i < 9)
 		{
 			for (j = 9; j > i + 1; j--)
 			{
-				topTenValue[j] = topTenValue[j - 1];
-				topTenName[j] = topTenName[j - 1];
+				topTenWordNum[j] = topTenWordNum[j - 1];
+				topTenWordName[j] = topTenWordName[j - 1];
 			}
 
-			topTenValue[i + 1] = itValue->second;
-			topTenName[i + 1] = itValue->first;
+			topTenWordNum[i + 1] = itValue->second;
+			topTenWordName[i + 1] = itValue->first;
 		}
-		
+
 		itValue++;
 	}
 
 	for (i = 0; i < 10; i++)
 	{
-		itName = wordNameMap.find(topTenName[i]);
-		topTenName[i] = itName->second;
+		itName = wordNameMap.find(topTenWordName[i]);
+		topTenWordName[i] = itName->second;
+	}
+}
+
+void GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPhraseName[], int topTenPhraseNum[],int wordCount)
+{
+	unordered_map<string, int> phraseMap;
+	unordered_map<string, int>::iterator itPhrase;
+	unordered_map<string, string>::iterator itName;
+	string phrase, word1, word2;
+	int i, j;
+
+	for (i = 0; i < 10; i++)
+	{
+		topTenPhraseNum[i] = 0;
+		topTenPhraseName[i] = "\0";
+	}
+
+	for (i = 0; i < wordCount - 1; i++)
+	{
+		phrase = allWords[i] + "$" + allWords[i + 1];
+		itPhrase = phraseMap.find(phrase);
+		if (itPhrase == phraseMap.end())
+			phraseMap.insert(pair<string, int>(phrase, 1));
+		else
+			itPhrase->second++;
+	}
+
+	itPhrase = phraseMap.begin();
+	while (itPhrase != phraseMap.end())
+	{
+		i = 9;
+
+		while (itPhrase->second >topTenPhraseNum[i] && i >= 0)
+			i--;
+
+		if (i < 9)
+		{
+			for (j = 9; j > i + 1; j--)
+			{
+				topTenPhraseNum[j] = topTenPhraseNum[j - 1];
+				topTenPhraseName[j] = topTenPhraseName[j - 1];
+			}
+
+			topTenPhraseNum[i + 1] = itPhrase->second;
+			topTenPhraseName[i + 1] = itPhrase->first;
+		}
+
+		itPhrase++;
 	}
 
 	for (i = 0; i < 10; i++)
-		os << "<" << topTenName[i] << ">: " << topTenValue[i] << endl;
+	{
+		for (j = 0; j < topTenPhraseName[i].length(); j++)
+			if (topTenPhraseName[i][j] == '$')
+				break;
+		word1.assign(topTenPhraseName[i], 0, j);
+		word2.assign(topTenPhraseName[i], j + 1, topTenPhraseName[i].length());
+		itName = wordNameMap.find(word1);
+		topTenPhraseName[i].assign(itName->second);
+		topTenPhraseName[i].append(" ");
+		itName = wordNameMap.find(word2);
+		topTenPhraseName[i].append(itName->second);
+	}
 }
