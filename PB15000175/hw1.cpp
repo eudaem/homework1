@@ -186,15 +186,18 @@ void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_
 		while (itValue->second > topTenValue[i] && i >= 0)
 			i--;
 
-		for (j = 9; j > i+1; j--)
+		if (i < 9)
 		{
-			topTenValue[j] = topTenValue[j - 1];
-			topTenName[j] = topTenName[j - 1];
+			for (j = 9; j > i + 1; j--)
+			{
+				topTenValue[j] = topTenValue[j - 1];
+				topTenName[j] = topTenName[j - 1];
+			}
+
+			topTenValue[i + 1] = itValue->second;
+			topTenName[i + 1] = itValue->first;
 		}
-
-		topTenValue[i + 1] = itValue->second;
-		topTenName[i + 1] = itValue->first;
-
+		
 		itValue++;
 	}
 
