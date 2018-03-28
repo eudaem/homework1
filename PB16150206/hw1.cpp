@@ -1,3 +1,6 @@
+//please swithch the Unicode character set to MBCS(Multi-Byte Character System before compiling!!!!
+
+//header files
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
@@ -142,7 +145,7 @@ bool isValidDir(string p) {
 }
 
 
-//statistic functions
+//specific statistic functions
 long charaStat(string p) {
 	long n = 0;
 	char ch;
@@ -300,8 +303,10 @@ bool cmp(const pair<string, int> &p1, const pair<string, int> &p2)
 		return false;
 	else
 		return false;
-}
+}//compare function
 
+
+//print the result on the screen and in result.txt
 void resultPrint(fileProp *result) {
 	ofstream outfile("result.txt");
 	map<string, int> ::iterator it;
