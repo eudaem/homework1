@@ -41,7 +41,6 @@ using namespace std;
 #define alpha 1
 #define separator -1
 #define not_asc -2
-#define arraysize 50
 #define FileEnd -3
 #define max_hashsize 400000
 #define topten 10
@@ -142,10 +141,10 @@ bool InsertHashWord(HashTable &H, ElemType e, Hashptr &p);
 bool InsertHashPhrase(HashTable H, ElemType e1, ElemType e2, Hashptr &p);
 
 // print the data in this hashnode with its frequency
-void VisitHashWord(Hashptr present_node, FILE* fp);
+void VisitHashWord(Hashptr present_node, FILE* fp, int count);
 
 // print the data and next_data in this hashnode with its frequency
-void VisitHashPhrase(Hashptr present_node, FILE* fp);
+void VisitHashPhrase(Hashptr present_node, FILE* fp, int count);
 
 /****************************************************************************************/
 // FUNCTIONS' DETAILS
@@ -230,6 +229,7 @@ int Seek1Word(FILE* stream, string &temp)
 	// 'prelength' return the lengh of the word
 	// 'temp' store the word
 	char ch;
+	int flag;
 	int prelength;
 
 	// initialize the variables
@@ -264,7 +264,8 @@ int Seek1Word(FILE* stream, string &temp)
 		if (prelength == 4)
 		{
 			// seek the next separator to give out the length of this word 
-			while (JudgeCharType(ch) == number || JudgeCharType(ch) == alpha)
+			flag = JudgeCharType(ch);
+			while (flag == number || flag == alpha)
 			{
 				temp.push_back(ch);
 				prelength++;
@@ -597,21 +598,21 @@ bool InsertHashPhrase(HashTable H, ElemType e1, ElemType e2, Hashptr &p)
 	return true;
 }
 
-void VisitHashWord(Hashptr present_node, FILE* fp)
+void VisitHashWord(Hashptr present_node, FILE* fp, int count)
 {
 	fprintf(fp, "%s ", present_node->data.word_prefix.c_str());
 	fprintf(fp, "%s ", present_node->data.word_suffix.c_str());
-	fprintf(fp, ":%d\n", present_node->data_count);
+	fprintf(fp, ":%d\n", count);
 }
 
-void VisitHashPhrase(Hashptr present_node, FILE* fp)
+void VisitHashPhrase(Hashptr present_node, FILE* fp, int count)
 {
 	fprintf(fp, "%s", present_node->data.word_prefix.c_str());
 	fprintf(fp, "%s", present_node->data.word_suffix.c_str());
 	fprintf(fp, " ");
 	fprintf(fp, "%s", present_node->next_data.word_prefix.c_str());
 	fprintf(fp, "%s", present_node->next_data.word_suffix.c_str());
-	fprintf(fp, ":%d\n", present_node->data_count);
+	fprintf(fp, ":%d\n", count);
 }
 
 /****************************************************************************************/
@@ -720,10 +721,15 @@ int main(int argc, char* argv[])
 
 	for (j = 0; j < 10; j++)
 	{
+		if (sums[j] <= 0)
+		{
+			cout << "words' number less than 10";
+			break;
+		}
 		cout << first_10_nodes[j]->data.word_prefix;
 		cout << first_10_nodes[j]->data.word_suffix << ":";
 		cout << sums[j] << endl;
-		VisitHashWord(first_10_nodes[j], rfp);
+		VisitHashWord(first_10_nodes[j], rfp, sums[j]);
 	}
 
 	//S5: FREE HASHTABLEWORD "words"
@@ -821,12 +827,17 @@ int main(int argc, char* argv[])
 	//S7: PRINT THE PHRASE RESULT
 	for (j = 0; j < 10; j++)
 	{
+		if (sums[j] <= 0)
+		{
+			cout << "phrases' number less than 10";
+			break;
+		}
 		cout << first_10_nodes[j]->data.word_prefix;
 		cout << first_10_nodes[j]->data.word_suffix << ' ';
 		cout << first_10_nodes[j]->next_data.word_prefix;
 		cout << first_10_nodes[j]->next_data.word_suffix << ":";
 		cout << sums[j] << endl;
-		VisitHashPhrase(first_10_nodes[j], rfp);
+		VisitHashPhrase(first_10_nodes[j], rfp, sums[j]);
 	}
 	fclose(rfp);
 	return 1;
