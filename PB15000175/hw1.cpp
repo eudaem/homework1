@@ -10,8 +10,8 @@ using namespace std;
 void SearchFiles(char* dir,string filename[],int& fileNum);
 void ReadFile(FILE *fp, unordered_map<string,int>& wordValueMap,unordered_map<string, string>& wordNameMap,int& chrtCount,int& wordCount,int& lineCount);
 void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, int chrtCount, int wordCount, int lineCount);
-void GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, string topTenWordName[],int topTenWordNum[]);
-void GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPhraseName[], int topTenPhraseNum[],int wordCount);
+int GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, string topTenWordName[],int topTenWordNum[]);
+int GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPhraseName[], int topTenPhraseNum[],int wordCount);
 
 string allWords[20000000];
 
@@ -165,7 +165,7 @@ void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_
 	int topTenWordNum[10];
 	string topTenPhraseName[10];
 	int topTenPhraseNum[10];
-	int i;
+	int i,wordNum,phraseNum;
 
 	os << "Char_Number: " << chrtCount << endl;
 	os << "Line_Number: " << lineCount << endl;
@@ -173,23 +173,23 @@ void WriteFile(ofstream& os, unordered_map<string, int> wordValueMap, unordered_
 	os << endl;
 	os << "The top ten frequency of words:" << endl;
 
-	GetTopTenWords(wordValueMap,wordNameMap,topTenWordName,topTenWordNum);
-	for (i = 0; i < 10; i++)
+	wordNum = GetTopTenWords(wordValueMap,wordNameMap,topTenWordName,topTenWordNum);
+	for (i = 0; i < wordNum; i++)
 		os << "<" << topTenWordName[i] << ">: " << topTenWordNum[i] << endl;
 
 	os << endl;
 	os << "The top ten frequenzy of phrases:" << endl;
 
-	GetTopTenPhrases(wordNameMap, topTenPhraseName, topTenPhraseNum, wordCount);
-	for (i = 0; i < 10; i++)
+	phraseNum = GetTopTenPhrases(wordNameMap, topTenPhraseName, topTenPhraseNum, wordCount);
+	for (i = 0; i < phraseNum; i++)
 		os << "<" << topTenPhraseName[i] << ">: " << topTenPhraseNum[i] << endl;
 }
 
-void GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, string topTenWordName[], int topTenWordNum[])
+int GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<string, string> wordNameMap, string topTenWordName[], int topTenWordNum[])
 {
 	unordered_map<string, int>::iterator itValue = wordValueMap.begin();
 	unordered_map<string, string>::iterator itName;
-	int i, j;
+	int i, j,wordNum;
 	for (i = 0; i < 10; i++)
 	{
 		topTenWordNum[i] = 0;
@@ -218,20 +218,26 @@ void GetTopTenWords(unordered_map<string, int> wordValueMap, unordered_map<strin
 		itValue++;
 	}
 
-	for (i = 0; i < 10; i++)
+	wordNum = wordValueMap.size();
+	if (wordNum >= 10)
+		wordNum = 10;
+		
+	for (i = 0; i < wordNum; i++)
 	{
 		itName = wordNameMap.find(topTenWordName[i]);
 		topTenWordName[i] = itName->second;
 	}
+
+	return wordNum;
 }
 
-void GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPhraseName[], int topTenPhraseNum[],int wordCount)
+int GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPhraseName[], int topTenPhraseNum[],int wordCount)
 {
 	unordered_map<string, int> phraseMap;
 	unordered_map<string, int>::iterator itPhrase;
 	unordered_map<string, string>::iterator itName;
 	string phrase, word1, word2;
-	int i, j;
+	int i, j,phraseNum;
 
 	for (i = 0; i < 10; i++)
 	{
@@ -272,7 +278,11 @@ void GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPh
 		itPhrase++;
 	}
 
-	for (i = 0; i < 10; i++)
+	phraseNum = phraseMap.size();
+	if (phraseNum >= 10)
+		phraseNum = 10;
+
+	for (i = 0; i < phraseNum; i++)
 	{
 		for (j = 0; j < topTenPhraseName[i].length(); j++)
 			if (topTenPhraseName[i][j] == '$')
@@ -285,4 +295,6 @@ void GetTopTenPhrases(unordered_map<string, string> wordNameMap, string topTenPh
 		itName = wordNameMap.find(word2);
 		topTenPhraseName[i].append(itName->second);
 	}
+
+	return phraseNum;
 }
