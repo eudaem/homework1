@@ -102,19 +102,20 @@ int Read(string filename, int &words_num, int &line, int &char_num, unordered_ma
 				word_min = "";
 			}
 			else {//a standard word
-				word += c;
-				word_min += c;
+				word.push_back(c);
+				word_min.push_back(c);
 				count++;
 			}
 		}
 		else if (c > 64 && c < 91) {//c is capital letter
-			word += c;
-			word_min += c;
+			word.push_back(c);
+			word_min.push_back(c);
 			count++;
 		}
 		else if (c > 96 && c < 123) {//c is small letter
-			word += c;
-			word_min += c - 32;
+			word.push_back(c);
+			b = c - 32;
+			word_min.push_back(b);
 			count++;
 		}
 		else {//c is else 
@@ -279,11 +280,17 @@ int main(int argc, char *argv[])
 	string filepath = "";
 	filepath = argv[1];
 	vector<string> files;
-	int if_file;
-	Get_All_Files(filepath, files);
+
+	if (filepath.find('.')!=string::npos) {
+		files.push_back(filepath);
+	}
+	else {
+		Get_All_Files(filepath, files);
+	}
+
 	int filesize = files.size();
-	int all_char = 0; 
-	int all_line = 0; 
+	int all_char = 0;
+	int all_line = 0;
 	int single_char = 0;
 	int single_line = 0;
 	int all_words = 0;
@@ -302,9 +309,9 @@ int main(int argc, char *argv[])
 	}
 
 
-	string outpath =  "myresult.txt";
+	string outpath = "myresult.txt";
 	ofstream  outfile(outpath, ios::app);
-	outfile << "char_number: " << all_char << "\n"<<endl;
+	outfile << "char_number: " << all_char << "\n" << endl;
 	outfile << "line_number: " << all_line << "\n" << endl;
 	outfile << "word_number: " << all_words << "\n" << endl << endl << endl;
 	searchtopwords(outpath, words_map, match_map);
