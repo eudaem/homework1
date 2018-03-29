@@ -73,14 +73,15 @@ void outputResult(struct alphaArray* dictionary);
 void outputToFile(char*path,struct wordStatisticsResult* topFrequencyWord, struct phaseStatisticsResult* topFrequencyPhase);
 void dictionaryDestroy(struct alphaArray* dictionary);
 
-int main()
+int main(int argc, char *argv[])
 {
-	char filePath[filePathLength];
+	char* filePath;
 	struct alphaArray dictionary[alphabet];
 	struct wordStatisticsResult topFrequencyWord[topFrequencyWordNum];
 	struct phaseStatisticsResult topFrequencyPhase[topFrequencyPhaseNum];
 	dictionaryInit(dictionary);
-	getFilePath(filePath);
+	filePath=*(argv+1);
+	//getFilePath(filePath);
 	traverseFileandCount(filePath, dictionary);
 	outputResult(dictionary);
 	topFrequencyWordStatistics(dictionary, topFrequencyWord);
