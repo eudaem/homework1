@@ -1,0 +1,318 @@
+// ConsoleApplication1.cpp : 定义控制台应用程序的入口点。
+//
+#include "stdafx.h"  
+#include <string>  
+#include <io.h>  
+#include <vector>  
+#include <iostream>  
+//#include <conio.h>　
+#include<math.h>
+#include"string.h"
+#include <unordered_map>
+using namespace std;
+#define N 1000000
+typedef struct WordNode
+{
+	char* word;
+	char* houzhui;
+	int geshu;
+
+}WordNode, *Word, *Wordpt;
+typedef unordered_map<char*, WordNode> wmap;
+wmap wordmap;
+typedef struct WNode
+{
+	char* word;
+	char* houzhui;
+	int geshu;
+
+}WNode;
+
+WNode Out_Word[10];
+int char_num = 0, word_num = 0, line_num = 0;
+
+void initial_Out_Word()
+{
+	int i = 0;
+	for (i = 0; i < 10; i++)
+	{
+		Out_Word[i].geshu = 0;
+		Out_Word[i].word = "a";
+		Out_Word[i].houzhui = "1";
+	}
+}
+
+void Charu_Out_Word(char* word, char* houzhui, int geshu)
+{
+	int i, j;
+	for (i = 0; i < 10 && Out_Word[i].geshu >= geshu; i++);
+	if (i < 10)// That means Out_Word[i] < geshu;
+	{
+		for (j = 9; j>i; j--)
+		{
+			Out_Word[j].geshu = Out_Word[j - 1].geshu;
+			Out_Word[j].word = Out_Word[j - 1].word; // 这里可能有问题
+			Out_Word[j].houzhui = Out_Word[j - 1].houzhui;
+		}
+		Out_Word[j].geshu = geshu;
+		Out_Word[j].word = word;
+		Out_Word[j].houzhui = houzhui;
+	}
+
+}
+int panduan(char ch)
+{
+	if (ch >= '0'&&ch <= '9')
+		return 1;
+	else if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))
+		return 2;
+	else
+		return 3;
+
+}
+
+void substring_sq(char* Sub, char* S, int pos, int len)
+{
+	int i = 0;
+
+	for (i = 0; i < len; i++)
+		Sub[i] = S[pos + i];
+	Sub[len] = '\0';
+}
+void Biaozhunhua( char* &key ,char *S, int len)
+{
+	int i = 0;
+	char Sub[1024];
+	for (i = 0; i < len;i++)
+	if (S[i] >= 'a' && S[i] <= 'z')
+		Sub[i] = S[i] - 32;
+	else
+		Sub[i] = S[i];
+	Sub[i] = '\0';
+	key = Sub;
+
+}
+void chuli(char word_stream[], int word, char word_[], char houzhui[],char* &key)
+{
+	int i = 0;
+
+	for (i = word - 1; panduan(word_stream[i]) == 1; i--);
+	substring_sq(word_, word_stream, 0, i + 1);
+	substring_sq(houzhui, word_stream, i + 1, word - i - 1);
+	Biaozhunhua(key, word_, i + 1);
+
+
+}
+
+void Select_Word()
+{
+
+	unordered_map<char*, WordNode>::iterator iter;
+	for (iter = wordmap.begin(); iter != wordmap.end(); iter++)
+	{
+		Charu_Out_Word(iter->second.word, iter->second.houzhui, iter->second.geshu);
+	}
+}
+int count_char_line(FILE* stream)
+{
+	char ch;
+	do
+	{
+		/* read a char from the file */
+		ch = fgetc(stream);
+		if (ch >= 32 && ch <= 126)
+			char_num++;
+		if (ch == '\n')
+			line_num++;
+	} while (ch != EOF);
+
+
+	return 0;
+
+}
+
+int countword(FILE* stream)
+{
+
+	char ch;
+	char word_stream[1024] = { '\0 ' };
+	char word_[1024] = { '\0' };
+	char houzhui[1024] = { '\0' };
+	char *key ;
+	int word = 0;// 字符串长度
+	int word1 = 1;//word1为0则一定不是单词
+	int K = 0;
+	WordNode WN;
+	unordered_map<char*, WordNode>::iterator iter;
+	do
+	{
+		ch = fgetc(stream);
+		if (ch >= 32 && ch <= 126)
+			char_num++;
+		if (ch == '\n')
+			line_num++;
+		if (panduan(ch) == 2)
+		{
+			//if (word1 == 1)//前面没出现在前四个字符的数字
+			word_stream[word] = ch;
+			word++;
+
+		}
+
+		else if (panduan(ch) == 3)// 是分隔符
+		{
+			if (word >= 4 && word<=1024 && word1 == 1)
+			{
+				word_stream[word] = '\0';
+				word_num++;
+				//cout << word_stream << endl;
+				chuli(word_stream, word, word_, houzhui, key);//cout << word_stream <<endl;//把字符串分解为有效部分和后缀，计算出哈希值，送到哈希函数里去储存；
+				//cout << "!!!" << word_ << key << endl;
+				iter = wordmap.find(key);
+				
+				if (iter!=wordmap.end())
+				{
+					wordmap.at(key).geshu++;
+					if (wordmap.at(key).word > word_)
+						wordmap.at(key).word = word_;
+					if (wordmap.at(key).houzhui > word_)
+						wordmap.at(key).houzhui = word_;
+					
+				}
+				else
+				{
+					WN.geshu = 1;
+					WN.word = word_;
+					WN.houzhui = houzhui;
+					pair<char*, WordNode>myword(key, WN);
+					wordmap.insert(myword);
+
+				}
+				
+				
+				
+				//charu(word_, houzhui, K);
+			}
+			//if (word)
+			//	strcpy_s(word_stream, word, "\0");
+			word = 0;
+			word1 = 1;
+
+
+		}
+		else if ((panduan(ch) == 1))
+		{
+			if (word < 4)// 数字出现在前4个
+				word1 = 0;
+			word_stream[word] = ch;
+			word++;
+		}
+	} while (ch != EOF);
+
+	return 0;
+}
+void getFiles(string path, string exd, vector<string>& files)
+{
+	//cout << "getFiles()" << path<< endl;   
+	//文件句柄  
+	long   hFile = 0;
+	//文件信息  
+	struct _finddata_t fileinfo;
+	string pathName, exdName;
+
+	if (0 != strcmp(exd.c_str(), ""))
+	{
+		exdName = "\\*." + exd;
+	}
+	else
+	{
+		exdName = "\\*";
+	}
+
+	if ((hFile = _findfirst(pathName.assign(path).append(exdName).c_str(), &fileinfo)) != -1)
+	{
+		do
+		{
+			//cout << fileinfo.name << endl;   
+
+			//如果是文件夹中仍有文件夹,迭代之  
+			//如果不是,加入列表  
+			if ((fileinfo.attrib &  _A_SUBDIR))
+			{
+				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+					getFiles(pathName.assign(path).append("\\").append(fileinfo.name), exd, files);
+			}
+			else
+			{
+				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+					files.push_back(pathName.assign(path).append("\\").append(fileinfo.name));
+			}
+		} while (_findnext(hFile, &fileinfo) == 0);
+		_findclose(hFile);
+	}
+}
+void Tongji(char* fp1)
+{
+
+	vector<string> files;
+	char * filePath = fp1;
+
+	//获取该路径下的所有jpg文件  
+	//getFiles(filePath, "jpg", files);  
+
+	//获取该路径下的所有文件  
+	getFiles(filePath, "*", files);
+
+	//列表文件输出路径  
+	//	FILE* fp;
+	FILE* fp2;
+	//fopen_s(&fp, "d:\\Adobe\\dir_list.txt", "w");
+
+	int size = files.size();
+	for (int i = 0; i < size; i++)
+	{
+
+		fopen_s(&fp2, files[i].c_str(), "r");
+		countword(fp2);
+		fclose(fp2);
+
+	}
+	//fclose(fp);
+
+
+
+
+
+
+
+}
+
+int main(int agrc, char * agrv[])
+{
+	int i;
+	char * fp1 = agrv[1];
+	initial_Out_Word();
+   Tongji(fp1);
+	Select_Word();
+	FILE* fp;
+	fopen_s(&fp, "D:/test1/result.txt", "w");
+	fprintf(fp, "%d", word_num);
+	fputs("\n", fp);
+	fprintf(fp, "%d", char_num);
+	fputs("\n", fp);
+	fprintf(fp, "%d", line_num);
+	fputs("\n", fp);
+
+	for (i = 0; i < 10; i++)
+	{
+		fputs(Out_Word[i].word, fp);
+		fputs(Out_Word[i].houzhui, fp);
+		fputs(":", fp);
+		fprintf(fp, "%d", Out_Word[i].geshu);
+		fputs("\n", fp);
+	}
+	fclose(fp);
+	system("pause");
+
+
+}
