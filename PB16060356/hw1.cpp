@@ -1,60 +1,850 @@
-#include "stdafx.h"
-#include <vector>
-#include <string>
-#include <stdlib.h>
-#include <io.h>
-using namespace std;
+#include<io.h>
+#include<stdio.h>
+#include "stdlib.h"
+#include "string.h"
+#include <sys/stat.h>
+#include <ctype.h>
 
-struct PointerInformation
+/*************************
+	  Data Structure
+*************************/
+
+typedef struct _nextWord NextWord;
+typedef struct wordNode WordNode;
+typedef struct topPhraseStruc TopPhraseStruc;
+typedef struct topWordStruc TopWordStruc;
+
+#define nullptr NULL 
+#define isALetter(temp)	((temp >= 'A'&&temp<='Z') || (temp>='a'&&temp <= 'z'))
+#define isLetterOrNum(temp) ((temp >='A'&&temp<='Z') || (temp>='a'&&temp <= 'z')||(temp>='0'&&temp<='9'))
+#define MAXLENGTH 1024
+#define NW_INITSIZE 15
+#define INCREAMENT 15
+
+struct wordNode
 {
-	short InsertOrReplace;  // 0->insert  |  1->replace  |  2->no action
+	int wordCount = 0;
+	char *coreString = nullptr;
+	char *suffixString = nullptr;
+	int phraseNum = 0;
+	int maxPhraseNum = 0;
+	NextWord *nextWord = nullptr;		//数组形式	构成词组的下一次单词
+	WordNode *next = nullptr;
 };
 
-struct Word
+struct _nextWord
 {
-	long fre = 0;
-	char word[100] = {0};
-	struct Word *next;
+	WordNode *nextWord = nullptr;
+	int nextWordCount = 0;
 };
 
-struct Phrase
+struct topPhraseStruc
 {
-	int fre = 0;
-	char word1[100] = {0};
-	char word2[100] = {0};
-	struct Phrase *next;
+	int phraseCount = 0;	//出现次数
+	WordNode *firstWord = nullptr;	//第一个单词
+	WordNode *secondWord = nullptr;	//第二个单词
 };
 
-struct PointerInformation PI;
-struct Phrase *tempPhrase;
-struct Word MaxWordFre[11];
-struct Phrase MaxPhraseFre[11];
-struct Word *headWord = NULL;
-struct Phrase *headPhrase = NULL;
-char tempWord[100];
-long characterNum = 0;
-long wordNum = 0;
-long lineNum = 0;
+struct topWordStruc
+{
+	int wordCount = 0;
+	WordNode *word = nullptr;
+};
 
 
-void ClearTemp();
-bool IsLetter(char ch);
-bool IsSeparator(char ch);
-char LetterConvert(char ch);
-void PrintIntoText();
-void StoreWord();
-void StorePhrase();
-void WordCheck(FILE *fp);
-void OpenFile(char *filePath);
-void getAllFiles(string path, vector<string>& files);
-char WordCompare(char *ch1, char *ch2);
-short PhraseCompare(struct Phrase *phrase1, struct Phrase *phrase2);
-struct Word *WordSearch(struct Word *pointer);
-struct Phrase *PhraseSearch(struct Phrase *pointer);
+/*************************
+	  Global Variable
+*************************/
+
+int Characters = 0;
+int enterNum = 0;
+int NumOfWords = 0;
+WordNode *HashSet[456976];
+char coreWordTemp[MAXLENGTH];
+char suffixWordTemp[MAXLENGTH];
+WordNode *FirstWord;
+WordNode *LastWord;
+TopWordStruc topTenWordList[10];
+TopPhraseStruc topTenPhraseList[10];
+char CompareTemp1[1024];
+char CompareTemp2[1024];
 
 
+/*************************
+  Function Declaration
+*************************/
 
-void PrintIntoText()
+int isInputLegal(int argc);
+int isFolder(char** argv);
+void CalAllFile(char filename[]);
+char isNotAWord(char *offset);
+void SolveTheWord(char *word);
+void PushWordIntoList(WordNode *p, char* word);
+void DevideWord(char *word);
+char isWordEqual(char *string1, char *string2);
+void PushPhraseIntoList();
+void FrequencyTopTen();
+void WordTen(WordNode *wordPointer);
+void PhraseTen(WordNode *wordPointer);
+char compareWord(WordNode *node1, WordNode *node2);
+char *MakeString(char *string);
+void anothermain(char *fileString);
+bool is_dir(const char* path);
+char *testFileRead(char *filename);
+char isSameWord(char *string1, char *string2);
+short compareSameWordAsc(char *string1, char *string2);
+void printIntoText();
+void ReadFolder(char *folderName);
+WordNode *WordNodeInit();
+WordNode *WordNodeInit(char *coreWord, char *suffixWord);
+
+
+int main(int argc, char** argv)
+{
+	for(int count = 0; count < 10; count++)
+	{
+		topTenPhraseList[count].phraseCount = 0;
+		topTenWordList[count].wordCount = 0;
+	}
+	long handle;
+	struct _finddata_t fileinfo;
+
+	char *file = (char *)"D:\\newsample";
+	if(argc != 2)
+		exit(0);
+
+	if(is_dir(argv[1]))  // if it is a folder
+	{
+		ReadFolder(argv[1]);
+	}
+	else
+	{
+		printf("%s\n", argv[1]);
+		enterNum++;
+
+		char *fileStream = testFileRead(argv[1]);
+		anothermain(fileStream);
+		free(fileStream);
+	}
+	FrequencyTopTen();
+	printIntoText();
+
+	return 0;
+}
+
+void ReadFolder(char *folderName)
+{
+	char filename[256];
+	long handle;
+	struct _finddata_t fileinfo;
+
+	filename[0] = '\0';
+	strcat_s(filename, 256, folderName);
+	strcat_s(filename, 256, "\\*");
+
+	if((handle = _findfirst(filename, &fileinfo)) != -1)
+	{
+		if(*fileinfo.name != '.')
+		{
+			filename[0] = '\0';
+			strcat_s(filename, 256, folderName);
+			strcat_s(filename, 256, "\\");
+			strcat_s(filename, 256, fileinfo.name);
+
+			if(is_dir(filename))
+				ReadFolder(filename);
+			else
+			{
+				printf("%s\n", filename);
+
+				enterNum++;
+				char *fileStream = testFileRead(filename);
+				anothermain(fileStream);
+				free(fileStream);
+			}
+		}
+		while(_findnext(handle, &fileinfo) == 0)
+		{
+			if(*fileinfo.name != '.')
+			{
+				filename[0] = '\0';
+				strcat_s(filename, 256, folderName);
+				strcat_s(filename, 256, "\\");
+				strcat_s(filename, 256, fileinfo.name);
+
+				if(is_dir(filename))
+				{
+					ReadFolder(filename);
+				}
+				else
+				{
+					enterNum++;
+					printf("%s\n", filename);
+
+					char *fileStream = testFileRead(filename);
+					anothermain(fileStream);
+					free(fileStream);
+				}
+			}
+		}
+
+		_findclose(handle);
+		return;
+	}
+}
+
+bool is_dir(const char* path)
+{
+	struct _stat buf = {0};
+	_stat(path, &buf);
+	return buf.st_mode & _S_IFDIR;
+}
+
+char *testFileRead(char *filename)
+{
+	char *text;
+	FILE *pf;
+	fopen_s(&pf, filename, "r");
+	fseek(pf, 0, SEEK_END);
+	long lSize = ftell(pf);
+	text = (char *)malloc(lSize + 1);
+	rewind(pf);
+	fread(text, 1, lSize, pf);
+	text[lSize] = '\0';
+	fclose(pf);
+	return text;
+}
+NextWord *NextWordArrayInit()
+{
+	NextWord *wordArray = (NextWord *)malloc(NW_INITSIZE * sizeof(NextWord));
+	wordArray->nextWord = nullptr;
+	wordArray->nextWordCount = 0;
+	return wordArray;
+}
+
+char word[MAXLENGTH];
+
+void anothermain(char *fileString)
+{
+	char *offset = fileString;
+	char move;
+	char temp;
+
+	int count;
+	do
+	{
+		if(temp = *offset)
+		{
+			if(temp >= 32 && temp <= 126)
+			{
+				Characters++;
+				if(temp >= 65 && temp <= 122)
+				{
+					if(temp >= 91 && temp <= 96)
+					{
+						offset++;
+						continue;
+					}
+					else
+					{
+						offset++;
+						word[0] = temp;
+					}
+				}
+				else if(temp >= 49 && temp <= 57)
+				{
+					offset++;
+					while(*offset >= 49 && *offset <= 57)
+					{
+						Characters++;
+						offset++;
+					}
+					while((*offset >= 49 && *offset <= 57) || (*offset >= 65 && *offset <= 90) || (*offset >= 97 && *offset <= 122))
+					{
+						Characters++;
+						offset++;
+					}
+					continue;
+				}
+				else
+				{
+					offset++;
+					continue;
+				}
+			}
+			else
+			{
+				if(*offset == 10)
+					enterNum++;
+				offset++;
+				continue;
+			}
+		}
+		else
+			break;
+		if(temp = *offset)
+		{
+			if(temp >= 32 && temp <= 126)
+			{
+				Characters++;
+				if(temp >= 65 && temp <= 122)
+				{
+					if(temp >= 91 && temp <= 96)
+					{
+						offset++;
+						continue;
+					}
+					else
+					{
+						offset++;
+						word[1] = temp;
+					}
+				}
+				else if(temp >= 49 && temp <= 57)
+				{
+					offset++;
+					while(*offset >= 49 && *offset <= 57)
+					{
+						Characters++;
+						offset++;
+					}
+					while((*offset >= 49 && *offset <= 57) || (*offset >= 65 && *offset <= 90) || (*offset >= 97 && *offset <= 122))
+					{
+						Characters++;
+						offset++;
+					}
+					continue;
+				}
+				else
+				{
+
+					offset++;
+					continue;
+				}
+			}
+			else
+			{
+				if(*offset == 10)
+					enterNum++;
+				offset++;
+				continue;
+			}
+		}
+		else
+			break;
+		if(temp = *offset)
+		{
+			if(temp >= 32 && temp <= 126)
+			{
+				Characters++;
+				if(temp >= 65 && temp <= 122)
+				{
+					if(temp >= 91 && temp <= 96)
+					{
+						offset++;
+						continue;
+					}
+					else
+					{
+						offset++;
+						word[2] = temp;
+					}
+				}
+				else if(temp >= 49 && temp <= 57)
+				{
+					offset++;
+					while(*offset >= 49 && *offset <= 57)
+					{
+						Characters++;
+						offset++;
+					}
+					while((*offset >= 49 && *offset <= 57) || (*offset >= 65 && *offset <= 90) || (*offset >= 97 && *offset <= 122))
+					{
+						Characters++;
+						offset++;
+					}
+					continue;
+				}
+				else
+				{
+					offset++;
+					continue;
+				}
+			}
+			else
+			{
+				if(*offset == 10)
+					enterNum++;
+				offset++;
+				continue;
+			}
+		}
+		else
+			break;
+
+		if(temp = *offset)
+		{
+			if(temp >= 32 && temp <= 126)
+			{
+				Characters++;
+				if(temp >= 65 && temp <= 122)
+				{
+					if(temp >= 91 && temp <= 96)
+					{
+						offset++;
+						continue;
+					}
+					else
+					{
+						offset++;
+						word[3] = temp;
+						for(count = 4; isLetterOrNum(*offset); offset++, count++)
+						{
+							Characters++;
+							word[count] = *offset;
+						}
+						word[count] = '\0';
+						NumOfWords++;
+						SolveTheWord(word);
+					}
+				}
+				else if(temp >= 49 && temp <= 57)
+				{
+					offset++;
+					while(*offset >= 49 && *offset <= 57)
+					{
+						Characters++;
+						offset++;
+					}
+					while((*offset >= 49 && *offset <= 57) || (*offset >= 65 && *offset <= 90) || (*offset >= 97 && *offset <= 122))
+					{
+						Characters++;
+						offset++;
+					}
+					continue;
+				}
+
+				else
+				{
+					offset++;
+					continue;
+				}
+			}
+			else
+			{
+				if(*offset == 10)
+					enterNum++;
+				offset++;
+				continue;
+			}
+		}
+		else
+			break;
+
+
+	}
+	while(*offset != '\0');
+}
+
+char isNotAWord(char *offset)
+{
+	char temp;
+	temp = *offset;
+	if(temp >= 32 && temp <= 126)
+	{
+		Characters++;
+	}
+	if(!isALetter(temp))
+		return 1;
+	temp = *(offset + 1);
+	if(temp >= 32 && temp <= 126)
+	{
+		Characters++;
+	}
+	if(!isALetter(temp))
+		return 2;
+	temp = *(offset + 2);
+	if(temp >= 32 && temp <= 126)
+	{
+		Characters++;
+	}
+	if(!isALetter(temp))
+		return 3;
+	temp = *(offset + 3);
+	if(temp >= 32 && temp <= 126)
+	{
+		Characters++;
+	}
+	if(!isALetter(temp))
+		return 4;
+	return 0;
+}
+
+void SolveTheWord(char *word)
+{
+	int location = 0;
+	location += (*(word) > 96 ? *(word)-97 : *(word)-65) * 17576;
+	location += (*(word + 1) > 96 ? *(word + 1) - 97 : *(word + 1) - 65) * 676;
+	location += (*(word + 2) > 96 ? *(word + 2) - 97 : *(word + 2) - 65) * 26;
+	location += *(word + 3) > 96 ? *(word + 3) - 97 : *(word + 3) - 65;
+	if(location == 136896)
+		int a = 0;
+	if((HashSet[location]) == NULL)
+	{
+		HashSet[location] = WordNodeInit();
+	}
+	PushWordIntoList(HashSet[location], word);
+	PushPhraseIntoList();
+}
+
+WordNode *WordNodeInit()
+{
+	WordNode *p = (WordNode *)malloc(sizeof(WordNode));
+	p->next = nullptr;
+	p->nextWord = nullptr;
+	return p;
+}
+
+void PushWordIntoList(WordNode *p, char* word)
+{
+	DevideWord(word);
+	int judge;
+	for(; p->next; p = p->next)
+	{
+		if(!isSameWord(p->next->coreString, coreWordTemp))
+		{
+			p->next->wordCount++;
+			if((judge = compareSameWordAsc(p->next->coreString, coreWordTemp) > 0))
+			{
+				free(p->next->coreString);
+				p->next->coreString = MakeString(coreWordTemp);
+			}
+			if((isWordEqual(p->next->suffixString, suffixWordTemp)) > 0)
+			{
+				free(p->next->suffixString);
+				p->next->suffixString = MakeString(suffixWordTemp);
+			}
+			if(LastWord)
+			{
+				FirstWord = LastWord;
+				LastWord = p->next;
+			}
+			else
+			{
+				if(FirstWord)
+					LastWord = p->next;
+				else
+					FirstWord = p->next;
+			}
+			return;
+		}
+	}
+	p->next = WordNodeInit(coreWordTemp, suffixWordTemp);
+	p->next->next = NULL;
+	if(LastWord)
+	{
+		FirstWord = LastWord;
+		LastWord = p->next;
+	}
+	else
+	{
+		if(FirstWord)
+		{
+			LastWord = p->next;
+		}
+		else
+		{
+			FirstWord = p->next;
+		}
+	}
+	return;
+}
+
+void DevideWord(char *word)
+{
+	char *temp1, *temp2;
+	int count;
+	for(temp1 = word; *temp1 != '\0'; temp1++);
+	temp1--;
+	for(temp2 = temp1; *temp2 < 58; temp2--);
+	for(count = 0; word <= temp2; word++, count++)
+		coreWordTemp[count] = *word;
+	coreWordTemp[count] = '\0';
+	for(count = 0; word <= temp1; word++, count++)
+		suffixWordTemp[count] = *word;
+	suffixWordTemp[count] = '\0';
+	return;
+}
+
+char isWordEqual(char *string1, char *string2)
+{
+	for(; *string1 && *string2; string1++, string2++)
+	{
+		if(*string1 != *string2)
+			return (*string1 - *string2);
+	}
+
+	if(*string1)
+		return 1;
+	else if(*string2)
+		return -1;
+	return 0;
+
+}
+char isSameWord(char *string1, char *string2)
+{
+	while(*string1 && *string2)
+	{
+		if(*string1 == *string2 || *string1 == *string2 - 32 || *string1 - 32 == *string2)
+		{
+			string1++;
+			string2++;
+		}
+		else
+			return 0;
+		if(*string1 || *string2)
+			return 0;
+		return 1;
+
+	}
+}
+
+short compareSameWordAsc(char *string1, char *string2)
+{
+	while(*string1)
+	{
+		if(*string1 > *string2)
+			return 1;
+		else if(*string1 < *string2)
+			return -1;
+		string1++;
+		string2++;
+	}
+	return 0;
+}
+
+WordNode *WordNodeInit(char *coreWord, char *suffixWord)
+{
+	WordNode *p = (WordNode *)malloc(sizeof(WordNode));
+	p->coreString = MakeString(coreWord);
+	p->suffixString = MakeString(suffixWord);
+	p->wordCount = 1;
+	p->phraseNum = 0;
+	p->next = nullptr;
+	p->nextWord = nullptr;
+	return p;
+}
+
+void PushPhraseIntoList()
+{
+	if(!LastWord)
+		return;
+
+	WordNode *temp;
+	NextWord *temp1;
+	int newSize;
+	temp = FirstWord;
+	int count;
+
+	if(temp->nextWord == NULL)
+	{
+		temp->nextWord = NextWordArrayInit();
+		temp->maxPhraseNum = NW_INITSIZE;
+	}
+	if((temp->phraseNum) == temp->maxPhraseNum)
+	{
+		newSize = temp->maxPhraseNum + INCREAMENT;
+		temp->maxPhraseNum = newSize;
+		temp->nextWord = (NextWord *)realloc(temp->nextWord, (newSize) * sizeof(NextWord));
+	}
+	for(temp1 = temp->nextWord, count = temp->phraseNum; count > 0; temp1++, count--)
+	{
+		if(!isSameWord(temp1->nextWord->coreString, LastWord->coreString))
+		{
+			temp1->nextWordCount++;
+			return;
+		}
+	}
+	temp1->nextWordCount++;
+	temp1->nextWord = LastWord;
+	FirstWord->phraseNum++;
+	return;
+}
+
+void FrequencyTopTen()
+{
+	for(int count1 = 0; count1 < 456976; count1++)
+	{
+		WordNode *p = HashSet[count1];
+		if(!p || !(p->next))
+			continue;
+		else
+		{
+			p = p->next;
+			while(p)
+			{
+				WordTen(p);
+				PhraseTen(p);
+				p = p->next;
+			}
+		}
+	}
+}
+
+void WordTen(WordNode *wordPointer)
+{
+	int shortest = topTenWordList[9].wordCount;
+	int wordCount = wordPointer->wordCount;
+	if(wordCount < shortest)
+		return;
+	if(wordCount == shortest)
+	{
+		if(compareWord(wordPointer, topTenWordList[9].word) > 0)
+			return;
+	}
+
+	for(int count = 8; count >= 0; count--)
+	{
+		if(wordPointer->wordCount > topTenWordList[count].wordCount)
+		{
+			topTenWordList[count + 1].word = topTenWordList[count].word;
+			topTenWordList[count + 1].wordCount = topTenWordList[count].wordCount;
+		}
+		else if(wordPointer->wordCount < topTenWordList[count].wordCount)
+		{
+			topTenWordList[count + 1].word = wordPointer;
+			topTenWordList[count + 1].wordCount = wordPointer->wordCount;
+			return;
+		}
+		else
+		{
+			if((compareWord(wordPointer, topTenWordList[count].word)) > 0)
+			{
+				topTenWordList[count + 1].word = wordPointer;
+				topTenWordList[count + 1].wordCount = wordPointer->wordCount;
+				return;
+			}
+			else
+			{
+				topTenWordList[count + 1].word = topTenWordList[count].word;
+				topTenWordList[count + 1].wordCount = topTenWordList[count].wordCount;
+			}
+		}
+	}
+	topTenWordList[0].word = wordPointer;
+	topTenWordList[0].wordCount = wordPointer->wordCount;
+	return;
+}
+
+char compareWord(WordNode *node1, WordNode *node2)
+{
+	char *temp1 = node1->coreString;
+	char *temp2 = node2->coreString;
+	for(; *temp1 && *temp2; temp1++, temp2++)
+	{
+		if(*temp1 != *temp2)
+			return (*temp1 - *temp2);
+	}
+	if(*temp1)
+		return 1;
+	else if(*temp2)
+		return -1;
+	else
+		return 0;
+}
+
+void PhraseTen(WordNode *wordPointer)
+{
+	int shortest = topTenPhraseList[9].phraseCount;
+	int judge1, judge2;
+	NextWord *nextWordTemp = wordPointer->nextWord;
+	for(int count = 0; count < wordPointer->phraseNum; count++)
+	{
+		if(nextWordTemp[count].nextWordCount < shortest)
+			return;
+
+		else
+		{
+			if(nextWordTemp[count].nextWordCount == shortest)
+			{
+
+				if((judge2 = compareWord(wordPointer, topTenPhraseList[9].firstWord)) > 0)
+					return;
+				else if(judge2 == 0)
+				{
+					if(compareWord(nextWordTemp[count].nextWord, topTenPhraseList[9].secondWord) > 0)
+						return;
+				}
+			}
+			for(int count1 = 8; count1 >= 0; count1--)
+			{
+				if((judge1 = nextWordTemp[count].nextWordCount - topTenPhraseList[count1].phraseCount) < 0)
+				{
+					topTenPhraseList[count1 + 1].phraseCount = nextWordTemp->nextWordCount;
+					topTenPhraseList[count1 + 1].firstWord = wordPointer;
+					topTenPhraseList[count1 + 1].secondWord = nextWordTemp[count].nextWord;
+					return;
+				}
+				else if(judge1 == 0)
+				{
+					if((judge2 = compareWord(wordPointer, topTenPhraseList[count1].firstWord)) > 0)
+					{
+						topTenPhraseList[count1 + 1].phraseCount = nextWordTemp->nextWordCount;
+						topTenPhraseList[count1 + 1].firstWord = wordPointer;
+						topTenPhraseList[count1 + 1].secondWord = nextWordTemp[count].nextWord;
+						return;
+					}
+					else if(judge2 == 0)
+					{
+						if(compareWord(nextWordTemp[count].nextWord, topTenPhraseList[9].secondWord) > 0)
+						{
+							topTenPhraseList[count1 + 1].phraseCount = nextWordTemp->nextWordCount;
+							topTenPhraseList[count1 + 1].firstWord = wordPointer;
+							topTenPhraseList[count1 + 1].secondWord = nextWordTemp[count].nextWord;
+							return;
+						}
+						else
+						{
+							topTenPhraseList[count1 + 1].phraseCount = topTenPhraseList[count1].phraseCount;
+							topTenPhraseList[count1 + 1].firstWord = topTenPhraseList[count1].firstWord;
+							topTenPhraseList[count1 + 1].secondWord = topTenPhraseList[count1].secondWord;
+						}
+					}
+					else
+					{
+						topTenPhraseList[count1 + 1].phraseCount = topTenPhraseList[count1].phraseCount;
+						topTenPhraseList[count1 + 1].firstWord = topTenPhraseList[count1].firstWord;
+						topTenPhraseList[count1 + 1].secondWord = topTenPhraseList[count1].secondWord;
+					}
+				}
+				else
+				{
+					topTenPhraseList[count1 + 1].phraseCount = topTenPhraseList[count1].phraseCount;
+					topTenPhraseList[count1 + 1].firstWord = topTenPhraseList[count1].firstWord;
+					topTenPhraseList[count1 + 1].secondWord = topTenPhraseList[count1].secondWord;
+				}
+			}
+
+			topTenPhraseList[0].phraseCount = nextWordTemp->nextWordCount;
+			topTenPhraseList[0].firstWord = wordPointer;
+			topTenPhraseList[0].secondWord = nextWordTemp[count].nextWord;
+			return;
+		}
+	}
+
+}
+
+char *MakeString(char *string)
+{
+
+	char *p;
+	short length = strlen(string);
+	p = (char *)malloc(length + 1);
+	strcpy_s(p, length + 1, string);
+	return p;
+}
+
+void printIntoText()
 {
 	FILE *fpOut = NULL;
 	errno_t err;
@@ -62,347 +852,28 @@ void PrintIntoText()
 
 	if(err == 0)  // if it is not a false location
 	{
-		fprintf(fpOut, "<characterNum>\t%d\n", characterNum);
-		fprintf(fpOut, "<lineNum>\t%d\n", lineNum);
-		fprintf(fpOut, "<wordNum>\t%d\n", wordNum);
+		fprintf(fpOut, "<characterNum>\t%d\n", Characters);
+		fprintf(fpOut, "<lineNum>\t%d\n", enterNum);
+		fprintf(fpOut, "<wordNum>\t%d\n", NumOfWords);
 
 		fprintf(fpOut, "\nMax Frequency Words\n");
-		for(int i = 0; i < 10; i++)
-			if(MaxWordFre[i].fre)
-				fprintf(fpOut, "%s\t\t%d\n", MaxWordFre[i].word, MaxWordFre[i].fre);
+
+		for(int count = 0; count < 10; count++)
+		{
+			if(topTenWordList[count].wordCount == 0)
+				break;
+			fprintf(fpOut, "%s\t%s\t%d\n", topTenWordList[count].word->coreString, topTenWordList[count].word->suffixString, topTenWordList[count].wordCount);
+		}
+
+		fprintf(fpOut, "\nMax Frequency Phrases\n");
+
+		for(int count = 0; count < 10; count++)
+		{
+			if(topTenPhraseList[count].phraseCount == 0)
+				break;
+			fprintf(fpOut, "%s%s\t%s%s\t%d\n",topTenPhraseList[count].firstWord->coreString, topTenPhraseList[count].firstWord->suffixString, topTenPhraseList[count].secondWord->coreString, topTenPhraseList[count].secondWord->suffixString, topTenPhraseList[count].phraseCount);
+		}
 	}
 
 	fclose(fpOut);
-}
-
-void StoreMaxFreWords(struct Word *p)
-{
-	short position;
-	short move;
-
-	while(p != NULL)
-	{
-		if(MaxWordFre[0].fre == 0)
-		{
-			strcpy(MaxWordFre[0].word, p->word);
-			MaxWordFre[0].fre = p->fre;
-		}
-
-		else
-		{
-			position = 0;
-
-			while(p->fre < MaxWordFre[position].fre)  // find the right position to store
-				position++;
-
-			if(position < 10)
-			{
-				if(p->fre == MaxWordFre[position].fre && WordCompare(p->word, MaxWordFre[position].word) == -1)   // ready to store after the position
-				{
-					for(move = 9; move > (position + 1); move--)
-					{
-						strcpy(MaxWordFre[move].word, MaxWordFre[move - 1].word);
-						MaxWordFre[move].fre = MaxWordFre[move - 1].fre;
-					}
-					strcpy(MaxWordFre[position + 1].word, p->word);
-					MaxWordFre[position + 1].fre = p->fre;
-				}
-
-				else  // ready to store right in the position
-				{
-					for(move = 9; move > position; move--)  // clear up the space to store
-					{
-						strcpy(MaxWordFre[move].word, MaxWordFre[move - 1].word);
-						MaxWordFre[move].fre = MaxWordFre[move - 1].fre;
-					}
-					strcpy(MaxWordFre[position].word, p->word);  // store
-					MaxWordFre[position].fre = p->fre;
-				}
-			}
-		}
-
-		p = p->next;
-	}
-}
-
-void ClearTemp()
-{
-	for(int i = 0; tempWord[i] != '\0'; i++)
-		tempWord[i] = '\0';
-}
-
-bool IsLetter(char ch)
-{
-	if((ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122))
-		return true;
-	else
-		return false;
-}
-
-bool IsSeparator(char ch)
-{
-	if((ch >= 0 && ch <= 47) || (ch >= 58 && ch <= 64) || (ch >= 91 && ch <= 96) || (ch >= 123 && ch <= 127))
-		return true;
-	else
-		return false;
-}
-
-char LetterConvert(char ch)
-{
-	if(ch >= 97 && ch <= 122)
-		return (ch -= 32);
-	else
-		return ch;
-}
-
-void WordConvert(char *ch1, char *ch2)
-{
-	for(int i = 0; ch1[i] != '\0'; i++)
-		ch1[i] = LetterConvert(ch1[i]);
-
-	for(int i = 0; tempWord[i] != '\0'; i++)
-		ch2[i] = LetterConvert(ch2[i]);
-}
-
-void StoreWord()
-{
-	struct Word *insertPointer;  // insertPointer points to the position to insert
-	struct Word *tempPointer;  // tempPointer puts the new word into the list
-
-	tempPointer = (struct Word*)malloc(sizeof(struct Word));  // new space
-	tempPointer->fre = 1;
-	strcpy(tempPointer->word, tempWord);
-
-	insertPointer = WordSearch(headWord);  // to see whether we should insert, replace or take no action
-
-	if(PI.InsertOrReplace == 0)  // insert at the head
-	{
-		tempPointer->next = headWord;
-		headWord = tempPointer;
-	}
-
-	else if(PI.InsertOrReplace == 1)  // replace and increase frequency
-	{
-		strcpy((insertPointer)->word, tempPointer->word);  // copy
-		insertPointer->fre++;
-	}
-
-	else if(PI.InsertOrReplace == 2)  // increase frequency only
-		insertPointer->fre++;
-}
-
-void StorePhrase()
-{
-
-}
-
-void WordCheck(FILE *fp)
-{
-	bool stop = false;
-	bool isEmpty = false;
-	char ch;  // ch gets the character one by one
-	short check = 0;  // to check if the first four characters are letters
-	short i = 0;
-
-	ch = fgetc(fp);
-	if(ch == EOF)
-		isEmpty = true;
-
-	for(; !stop; ch = fgetc(fp))  // if it is not the end of the text
-	{
-		if(ch >= 32 && ch <= 126)
-			characterNum++;
-		if(ch == '\n')
-			lineNum++;
-
-		if(check < 4)  // to check the first four characters
-		{
-			if(ch == EOF)
-			{
-				stop = true;
-				if(isEmpty == false)
-					lineNum++;
-			}
-
-			else if(IsLetter(ch) == true)
-			{
-				++check;
-				tempWord[i] = ch;
-				++i;  // search for the next
-			}
-			else
-			{
-				i = 0;
-				check = 0;
-				ClearTemp();
-			}
-		}
-		else  // first four characters are all letters, ready to store
-		{
-			if(IsSeparator(ch) || ch == EOF)  // have met a separator, store the word
-			{
-				i = 0;  // roll back to the beginning in the next search
-				check = 0;  // roll back to the beginning in the next search
-
-				wordNum++;  // have found another word
-				StoreWord();  // store the word
-				ClearTemp();  // prepare for the next search
-
-				if(ch == EOF)
-				{
-					stop = true;
-					if(isEmpty == false)
-						lineNum++;
-				}
-			}
-
-			else  // have not met a separator, keep searching
-			{
-				tempWord[i] = ch;
-				++i;  // search for the next
-			}
-		}
-	}
-}
-
-void OpenFile(char *filePath)
-{
-	FILE* fp = NULL;
-	errno_t err;
-	err = fopen_s(&fp, filePath, "r");
-
-	if(err == 0)  // if it is not a false location
-		WordCheck(fp);
-
-	fclose(fp);
-}
-
-void getAllFiles(string path, vector<string>& files)
-{
-	char * location;  // location converts char * into string
-	long  handle = 0;  // File Handle
-	struct _finddata_t fileinfo;  // File Information
-	string p;
-
-	if((handle = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
-	{
-		do
-		{
-			if((fileinfo.attrib & _A_SUBDIR))  // to check whether it is a folder or a file
-			{
-				if(strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
-				{
-					files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-					getAllFiles(p.assign(path).append("\\").append(fileinfo.name), files);
-				}
-			}
-			else
-			{
-				files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-				location = (char *)p.data();
-				OpenFile(location);
-			}
-		}
-		while(_findnext(handle, &fileinfo) == 0);
-		_findclose(handle);  // close the handle
-	}
-}
-
-char WordCompare(char *ch1, char *ch2)
-{
-	int i = 0;
-
-	char chTemp1[100] = {0};
-	char chTemp2[100] = {0};
-
-	for(int i = 0; ch1[i] != '\0'; i++)
-		chTemp1[i] = ch1[i];
-	for(int i = 0; ch2[i] != '\0'; i++)
-		chTemp2[i] = ch2[i];
-
-	WordConvert(chTemp1, chTemp2);  // convert all small letters to big letters
-
-	while(chTemp1[i] != '\0' || chTemp2[i] != '\0')
-	{
-		if(IsLetter(chTemp1[i])&IsLetter(chTemp2[i]))
-		{
-			if(chTemp1[i] < chTemp2[i])
-				return -1;
-			else if(chTemp1[i] > chTemp2[i])
-				return 1;
-			else
-				i++;
-		}
-		else if(IsLetter(chTemp1[i]) & !IsLetter(chTemp2[i]))
-			return 1;
-		else	if(!IsLetter(chTemp1[i]) & IsLetter(chTemp2[i]))
-			return -1;
-		else
-			i++;
-	}
-	return 0;
-}
-
-struct Word *WordSearch(struct Word *pointer)
-{
-	if(pointer == NULL)  // if the list is empty
-	{
-		PI.InsertOrReplace = 0;  // insert
-	}
-
-	else  // if the list is not empty
-	{
-		while((pointer != NULL) && WordCompare(pointer->word, tempWord) != 0)
-			pointer = pointer->next;
-
-		if(pointer == NULL)
-		{
-			PI.InsertOrReplace = 0;  // insert at the head
-		}
-
-		else  // replace or take no action
-		{
-			if(strcmp(pointer->word, tempWord) > 0)
-				PI.InsertOrReplace = 1;  // replace
-
-			else if(strcmp(pointer->word, tempWord) <= 0)
-				PI.InsertOrReplace = 2;  // no action
-		}
-	}
-	return pointer;  // return the right position
-}
-
-struct Phrase *PhraseSearch(struct Phrase *pointer)
-{
-	return pointer;
-}
-
-short PhraseCompare(struct Phrase *phrase1, struct Phrase *phrase2)
-{
-	if(WordCompare(phrase1->word1, phrase2->word1) == -1)
-		return -1;
-
-	else if(WordCompare(phrase1->word1, phrase2->word1) == 1)
-		return 1;
-
-	else
-	{
-		if(WordCompare(phrase1->word2, phrase2->word2) == -1)
-			return -1;
-		if(WordCompare(phrase1->word2, phrase2->word2) == 1)
-			return 1;
-		else
-			return 0;
-	}
-
-}
-
-int main(int argc, char *argv[])
-{
-	const char * filePath = argv[1];
-	vector<string> files;
-
-	getAllFiles(filePath, files);  // search for all the files
-	StoreMaxFreWords(headWord);
-	PrintIntoText();
 }
