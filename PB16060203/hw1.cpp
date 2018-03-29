@@ -1,4 +1,4 @@
-// wordFrequencyStatistics.cpp: 定义控制台应用程序的入口点。
+// wordFrequencyStatistics.cpp: 
 //
 
 #include "malloc.h"
@@ -125,7 +125,7 @@ void dictionaryInit(struct alphaArray* dictionary)
 
 void getFilePath(char* filePath)
 {
-	printf("请输入文件夹路径或者文件路径：");
+	printf("Please input filepath:");
 	scanf("%s", filePath);
 }
 
