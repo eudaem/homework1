@@ -230,14 +230,10 @@ long wordStat(string p, fileProp *result) {
 			str[i] = c;
 			i++;
 		}
-		else if (
-			((str[0] >= 'A'&&str[0] <= 'Z') || (str[0] >= 'a'&&str[0] <= 'z'))
-			&& ((str[1] >= 'A'&&str[1] <= 'Z') || (str[1] >= 'a'&&str[1] <= 'z'))
-			&& ((str[2] >= 'A'&&str[2] <= 'Z') || (str[2] >= 'a'&&str[2] <= 'z'))
-			&& ((str[3] >= 'A'&&str[3] <= 'Z') || (str[3] >= 'a'&&str[3] <= 'z'))
-			) {
+		else if (isWord(str)) {
 			result->wordNum++;
 			word1 = str;
+			transform(word1.begin(),word1.end(),word1.begin(), ::toupper);
 			result->dict[word1] += 1;  //word frequency
 			for (i = 0; i < 256; i++)
 				str[i] = 0;
