@@ -19,7 +19,6 @@
 #pragma comment(lib,"shlwapi.lib")
 using  namespace std;
 
-
 //result structure
 typedef struct {
 	long charaNum;
@@ -34,7 +33,6 @@ void fileRead(string p, fileProp *result);
 
 void folderTraverse(string p, fileProp *result);
 void DFS(string p, fileProp *result);
-bool dirScan(string p, fileProp *result);
 
 bool isSourceFile(string p);
 bool isValidDir(string p);
@@ -84,7 +82,7 @@ void DFS(string path, fileProp *result)
 			string name = path + "/" + string(p->d_name);
 			fileRead(name, result);
 			if (p->d_type == 4) {
-				GetAllFiles(name, files);
+				DFS(name, result);
 			}
 		}
 
@@ -104,8 +102,6 @@ int main(int argc,char *argv[])
 	string fileName;
 	fstream fileEx;
 	fileName = argv[1];
-//	cout << "Please input the name of the file/folder." << endl;
-//	getline(cin, fileName);
 	fileEx.open(fileName, ios::in);
 	if (isSourceFile(fileName)) {
 		fileRead(fileName, result);
@@ -130,29 +126,13 @@ void fileRead(string p, fileProp *result) {
 }
 
 
-bool dirScan(string p, fileProp *result) {
-	_finddata_t file_info;
-	string current_path = p + "/*.*";
-	int handle = _findfirst(current_path.c_str(), &file_info);
-	if (-1 == handle)
-		return false;
-	do {
-		if (file_info.attrib != _A_SUBDIR)
-			fileRead(file_info.name, result);
-	} while (!_findnext(handle, &file_info));
-	_findclose(handle);
-	return true;
-}
-
-
 void folderTraverse(string p, fileProp *result) {
-	if (!dirScan(p, result))
-		cout << "Traverse failed" << endl;
 	DFS(p, result);
 }
 
 
 //judge the type of the file
+#ifdef WIN32
 bool isSourceFile(string p) {
 	_finddata_t file_info;
 	string current_path = p;
@@ -169,7 +149,19 @@ bool isSourceFile(string p) {
 	else
 		return false;
 }
+#endif
 
+#ifdef __linux__
+bool isSourceFile(string p) {
+	string name;
+	DIR* dir = opendir(path.c_str());
+	dirent* p = NULL;
+	if (p->d_name[0] != '.')
+		return true;
+	else
+		return false;
+}
+#endif
 
 bool isValidDir(string p) {
 	if (true == (bool)PathIsDirectory(p.c_str()))
