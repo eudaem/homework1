@@ -89,7 +89,6 @@ int main()
 
 	gettop(fourletter);
 
-	system("pause");
 	return 1;
 }
 
