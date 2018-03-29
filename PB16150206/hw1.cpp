@@ -24,8 +24,10 @@ typedef struct {
 	long charaNum;
 	long lineNum;
 	long wordNum;
-	map<string, int> dict;
-	map<string, int> phrase;
+	map<string, int> dict;  //transformed
+	map<string, int> nonedict;  //primary
+	map<string, int> phrase;   //primary
+	map<string, int> transphrase;   //transformed
 }fileProp;
 
 //declarations
@@ -42,6 +44,7 @@ long lineStat(string p);
 bool isWord(char *ch);
 long wordStat(string p, fileProp *result);
 void phraseStat(string p,fileProp *result);
+map<string, int> mapProc(map<string, int> dict, map<string, int> nonedict);
 
 void resultPrint(fileProp *result);
 
@@ -211,7 +214,8 @@ long wordStat(string p, fileProp *result) {
 		else if (isWord(str)) {
 			result->wordNum++;
 			word1 = str;
-			transform(word1.begin(),word1.end(),word1.begin(), ::toupper);
+			result->nonedict[word1] += 1;
+			transform(word1.begin(),word1.end(),word1.begin(), ::tolower);
 			result->dict[word1] += 1;  //word frequency
 			for (i = 0; i < 256; i++)
 				str[i] = 0;
@@ -224,6 +228,31 @@ long wordStat(string p, fileProp *result) {
 		}
 	}
 	return 0;
+}
+
+map<string, int> mapProc(map<string, int> dict, map<string, int> nonedict) {
+	string tmp;
+	int cmp;
+	int wordFreq;
+	map<string, int>::iterator it;
+	map<string, int>::iterator tmpit;
+	for (it = nonedict.begin(); it != nonedict.end(); it++) {
+		tmp = it->first;
+		transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+		wordFreq = dict.find(tmp)->second;
+		it->second = wordFreq;
+	}
+	for (it = nonedict.begin(); it != nonedict.end(); it++) {
+		tmpit = it;
+		cmp = it->second;
+		it++;
+		for (it; it != nonedict.end(); it++) {
+			if ((it->second) == cmp)
+				nonedict.erase(it);
+		}
+		it = tmpit;
+	}
+	return nonedict;
 }
 
 void phraseStat(string p, fileProp *result) {
@@ -263,6 +292,8 @@ void phraseStat(string p, fileProp *result) {
 			phr2 = wordB;
 			phr = phr1 +" "+ phr2;
 			result->phrase[phr] += 1;
+			transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
+			result->transphrase[phr] += 1;
 		}
 		while ((c >= 'A'&&c <= 'Z') || (c >= 'a'&&c <= 'z') || (c >= '0') && (c <= '9'))
 		{
@@ -281,6 +312,8 @@ void phraseStat(string p, fileProp *result) {
 			phr2 = wordB;
 			phr = phr1 +" "+ phr2;
 			result->phrase[phr] += 1;
+			transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
+			result->transphrase[phr] += 1;
 		}
 		while ((c >= 'A'&&c <= 'Z') || (c >= 'a'&&c <= 'z') || (c >= '0') && (c <= '9'))
 		{
@@ -298,6 +331,8 @@ void phraseStat(string p, fileProp *result) {
 			phr2 = wordB;
 			phr = phr1 +" "+phr2;
 			result->phrase[phr] += 1;
+			transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
+			result->transphrase[phr] += 1;
 		}
 	}
 	
@@ -321,72 +356,76 @@ bool cmp(const pair<string, int> &p1, const pair<string, int> &p2)
 {
 	if (p1.second > p2.second)
 		return true;
-	else if (p1.second == p2.second)
-		return false;
 	else
 		return false;
 }
 
 void resultPrint(fileProp *result) {
+	result->nonedict = mapProc(result->dict, result->nonedict);
+	result->phrase = mapProc(result->transphrase, result->phrase);
 	ofstream outfile("result.txt");
-	map<string, int> ::iterator it;
-	map<string, int>::iterator it1;
-	vector<pair<string, int>> arr;
-	vector<pair<string, int>> arr1;
 
+	//print characters
 	cout << "characters:" << result->charaNum << endl;
-	cout << "word:" << result->wordNum << endl;
-	cout << "line:" << result->lineNum << endl;
-	cout << endl;
+	outfile << "characters:" << " " << result->charaNum << endl;
 
-	outfile << "characters:" << result->charaNum << endl;
-	outfile << "word:" << result->wordNum << endl;
-	outfile << "line:" << result->lineNum << endl;
+	//print words
+	cout << "word:" << result->wordNum << endl;
+	outfile << "word:" << " " << result->wordNum << endl;
+
+	//print lines
+	cout << "line:" << result->lineNum << endl;
+	outfile << "line:" << " " << result->lineNum << endl;
+
+	cout << endl;
 	outfile << endl;
 
 
-	for (it = result->dict.begin(); it != result->dict.end(); it++)
-		arr.push_back(make_pair(it->first, it->second));
-	sort(arr.begin(), arr.end(), cmp);
-	if ((arr.end() - arr.begin()) >= 10) {
-		for (vector<pair<string, int> >::iterator it = arr.begin(); it < (arr.begin() + 10); it++)
-			cout << it->first << ':' << it->second << endl;
-		cout << endl;
-	}
-	else {
-		for (vector<pair<string, int> >::iterator it = arr.begin(); it < arr.end(); it++)
-			cout << it->first << ':' << it->second << endl;
-		cout << endl;
-	}
-	if ((arr.end() - arr.begin()) >= 10) {
-		for (vector<pair<string, int> >::iterator it = arr.begin(); it < (arr.begin() + 10); it++)
-			outfile << it->first << ':' << it->second << endl;
-	}
-	else {
-		for (vector<pair<string, int> >::iterator it = arr.begin(); it < arr.end(); it++)
-			outfile << it->first << ':' << it->second << endl;
-	}
-
-	for (it1 = result->phrase.begin(); it1 != result->phrase.end(); it1++)
+	//print word frequency
+	map<string, int>::iterator it1;
+	vector<pair<string, int>> arr1;
+	vector<pair<string, int>>::iterator ait1;
+	for (it1 = result->nonedict.begin(); it1 != result->nonedict.end(); it1++)
 		arr1.push_back(make_pair(it1->first, it1->second));
 	sort(arr1.begin(), arr1.end(), cmp);
 	if ((arr1.end() - arr1.begin()) >= 10) {
-		for (vector<pair<string, int> >::iterator it2 = arr1.begin(); it2 < (arr1.begin() + 10); it2++)
-			cout << it2->first << ':' << it2->second << endl;
+		for (ait1 = arr1.begin(); ait1 < (arr1.begin() + 10); ait1++) {
+			cout << ait1->first << ": " << ait1->second << endl;
+			outfile << ait1->first << ": " << ait1->second << endl;
+		}
 	}
 	else {
-		for (vector<pair<string, int> >::iterator it2 = arr1.begin(); it2 < arr1.end(); it2++)
-			cout << it2->first << ':' << it2->second << endl;
+		for (ait1 = arr1.begin(); ait1 < arr1.end(); ait1++) {
+			cout << ait1->first << ": " << ait1->second << endl;
+			outfile << ait1->first << ": " << ait1->second << endl;
+		}
 	}
-	if ((arr1.end() - arr1.begin()) >= 10) {
-		for (vector<pair<string, int> >::iterator it2 = arr1.begin(); it2 < (arr1.begin() + 10); it2++)
-			outfile << it2->first << ':' << it2->second << endl;
+	arr1.~vector();
+
+	cout << endl;
+	outfile << endl;
+
+	//pring phrase frequency
+	map<string, int>::iterator it2;
+	vector<pair<string, int>> arr2;
+	vector<pair<string, int>>::iterator ait2;
+	for (it2 = result->phrase.begin(); it2 != result->phrase.end(); it2++)
+		arr2.push_back(make_pair(it2->first, it2->second));
+	sort(arr2.begin(), arr2.end(), cmp);
+	if ((arr2.end() - arr2.begin()) >= 10) {
+		for (ait2 = arr2.begin(); ait2 < (arr2.begin() + 10); ait2++) {
+			cout << ait2->first << ": " << ait2->second << endl;
+			outfile << ait2->first << ": " << ait2->second << endl;
+		}
 	}
 	else {
-		for (vector<pair<string, int> >::iterator it2 = arr1.begin(); it2 < arr1.end(); it2++)
-			outfile << it2->first << ':' << it2->second << endl;
+		for (ait2 = arr2.begin(); ait2 < arr2.end(); ait2++) {
+			cout << ait2->first << ": " << ait2->second << endl;
+			outfile << ait2->first << ": " << ait2->second << endl;
+		}
 	}
-
-
-
+	arr2.~vector();
+	
 }
+
+
