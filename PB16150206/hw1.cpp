@@ -29,7 +29,7 @@ typedef struct {
 	map<string, int> dict;  //transformed
 	map<string, int> nonedict;  //primary
 	map<string, int> phrase;   //primary
-	map<string, int> transphrase;   //transformed
+//	map<string, int> transphrase;   //transformed
 }fileProp;
 
 //declarations
@@ -118,7 +118,6 @@ int main(int argc,char *argv[])
 	}
 	else
 		cout << "It's not a valid file!" << endl;
-	system("pause");
 	return 0;
 }
 
@@ -294,8 +293,8 @@ void phraseStat(string p, fileProp *result) {
 			phr2 = wordB;
 			phr = phr1 +" "+ phr2;
 			result->phrase[phr] += 1;
-			transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
-			result->transphrase[phr] += 1;
+		//	transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
+		//	result->transphrase[phr] += 1;
 		}
 		while ((c >= 'A'&&c <= 'Z') || (c >= 'a'&&c <= 'z') || (c >= '0') && (c <= '9'))
 		{
@@ -314,8 +313,8 @@ void phraseStat(string p, fileProp *result) {
 			phr2 = wordB;
 			phr = phr1 +" "+ phr2;
 			result->phrase[phr] += 1;
-			transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
-			result->transphrase[phr] += 1;
+		//	transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
+		//	result->transphrase[phr] += 1;
 		}
 		while ((c >= 'A'&&c <= 'Z') || (c >= 'a'&&c <= 'z') || (c >= '0') && (c <= '9'))
 		{
@@ -333,8 +332,8 @@ void phraseStat(string p, fileProp *result) {
 			phr2 = wordB;
 			phr = phr1 +" "+phr2;
 			result->phrase[phr] += 1;
-			transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
-			result->transphrase[phr] += 1;
+		//	transform(phr.begin(), phr.end(), phr.begin(), ::tolower);
+		//	result->transphrase[phr] += 1;
 		}
 	}
 	
@@ -364,7 +363,7 @@ bool cmp(const pair<string, int> &p1, const pair<string, int> &p2)
 
 void resultPrint(fileProp *result) {
 	result->nonedict = mapProc(result->dict, result->nonedict);
-	result->phrase = mapProc(result->transphrase, result->phrase);
+//	result->phrase = mapProc(result->transphrase, result->phrase);
 	ofstream outfile("result.txt");
 
 	//print characters
@@ -407,8 +406,8 @@ void resultPrint(fileProp *result) {
 	cout << endl;
 	outfile << endl;
 
-	//pring phrase frequency
 	/*
+	//pring phrase frequency
 	map<string, int>::iterator it2;
 	vector<pair<string, int>> arr2;
 	vector<pair<string, int>>::iterator ait2;
@@ -429,7 +428,8 @@ void resultPrint(fileProp *result) {
 	}
 	arr2.~vector();
 	*/
-	
 }
+
+
 
 
