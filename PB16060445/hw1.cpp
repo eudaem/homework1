@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 {
 	char  *p;
 	int a[NUM], b[NUM], i, j, t = 1, l = 1;
-       listDir(argv[1]);
+    listDir(argv[1]);
 	fout = fopen("result.txt", "w");
 	fprintf(fout, "char_number: %d\nline_number: %d\n", characters, lines);
 	fprintf(fout, "word_number: %d\nthe top ten frequency of words: \n", words);
@@ -83,8 +83,7 @@ int main(int argc, char *argv[])
 
 	fclose(fout);
 	return 0;
-}
-
+} 
 
 void listDir(char *path) 
 {
@@ -184,7 +183,7 @@ int JudgeWordEqual(char a[], char b[]) //from JudgeWordEqualPlus(char a[], char 
 	char ax[1024], bx[1024];
 	while (a[la - 1] >= '0' && a[la - 1] <= '9') la--; strncpy(ax, a, la); ax[la] = '\0';
 	while (b[lb - 1] >= '0' && b[lb - 1] <= '9') lb--; strncpy(bx, b, lb); bx[lb] = '\0';
-	if (stricmp(ax, bx) == 0)
+	if (strcasecmp(ax, bx) == 0)
 	{
 		if (strcmp(ax, bx) < 0) strcpy(b, a); 
 		return 1;
@@ -612,6 +611,4 @@ void statistics()
 
 
 }
-
-
 
