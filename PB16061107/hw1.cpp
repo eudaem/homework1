@@ -8,11 +8,11 @@
 #include<fstream>
 #include<math.h>
 
-#define N 200//绝对地址的长度
+#define N 200//
 #define word_MAX 1024
-#define TOP_WORD 10//想要查找前10个单词
-#define TOP_WORD_WORD 10//想要查找前10个词组
-//文件夹最后
+#define TOP_WORD 10//
+#define TOP_WORD_WORD 10
+
 struct handle_chain {
 	int change;
 	long handle;
@@ -41,76 +41,18 @@ struct top_word_word {
 	word_word* chain;
 };
 
-word index_word[26][26][26][26] = {};//26个字母，前四个必为字母
-//word_word index_word_word[26][26][26][26] = {};//26个字母，前四个必为字母
+word index_word[26][26][26][26] = {};
 top_word wordlist[TOP_WORD] = {};
-//top_word_word word_wordlist[TOP_WORD_WORD] = {};
 
-char OLD[word_MAX] = {}, NEW[word_MAX] = {};//储存之前的那个单词
+
+char OLD[word_MAX] = {}, NEW[word_MAX] = {};//
 int char_num = 0, word_num = 0, line_num = 0, file_num = 0;
 char to_search[N] = {};
-long handle;//用栈哟 已实现
+long handle;//
 handle_chain* head = (handle_chain*)malloc(sizeof(handle_chain)), *work = head;
 
 using namespace std;
-/*
-int judge_file(char* name) {//判断是否可读 0为不可读 1为可读
-	if (!name)
-		return 0;
-	//file_num++;
-	int length = strlen(name),now=length;
-	while (now) {//其实也许可以不要这个判定条件
-		if (*(name + now - 1) == '.')
-			break;
-		now--;
-	}
-	if (!now)
-		return 0;
-	switch (*(name + now)) {//txt cs cpp js java py h php html
-	case 't':
-		if (now + 3 == length && *(name + now + 1) == 'x'&&*(name + now + 2) == 't')
-			return 1;
-		else 
-			return 0;
-	case 'c':
-		if (now + 3 == length && *(name + now + 1) == 'p'&&*(name + now + 2) == 'p') {
-			return 1;
-		}
-		else if (now + 2 == length && *(name + now + 1) == 's')
-			return 1;
-		else
-			return 0;
-	case 'h':
-		if (now + 4 == length && *(name + now + 1) == 't'&&*(name + now + 2) == 'm'&&*(name + now + 3) == 'l') {
-			return 1;
-		}
-		else if (now + 1 == length)
-			return 1;
-		else
-			return 0;
-	case 'j':
-		if (now + 4 == length && *(name + now + 1) == 'a'&&*(name + now + 2) == 'v'&&*(name + now + 3) == 'a') {
-			return 1;
-		}
-		else if (now + 2 == length && *(name + now + 1) == 's')
-			return 1;
-		else
-			return 0;
-	case 'p':
-		if (now + 3 == length && *(name + now + 1) == 'h'&&*(name + now + 2) == 'p') {
-			return 1;
-		}
-		else if (now + 2 == length && *(name + now + 1) == 'y')
-			return 1;
-		else
-			return 0;
-	default:
-		return 0;
-	}
-	return 0;
-}
-//判断是否可读 0为不可读 1为可读(tested)
-*/
+
 void creatnode_handle(int change,long handle) {
 	handle_chain* tem = (handle_chain *)malloc(sizeof(handle_chain));
 	work->next = tem;
@@ -121,8 +63,8 @@ void creatnode_handle(int change,long handle) {
 	work = tem;
 	return;
 }
-//进栈(tested)
-void next_file(long &handle, _finddata_t &fileinfo) {//直接找到下一个文件或者文件夹
+//
+void next_file(long &handle, _finddata_t &fileinfo) {//
 	if (handle == -1)
 		return;
 	while (1) {
@@ -131,7 +73,7 @@ void next_file(long &handle, _finddata_t &fileinfo) {//直接找到下一个文�
 				break;
 		}
 		else {
-			handle = work->handle;//出栈
+			handle = work->handle;//
 			work = work->before;
 			int length = strlen(to_search);
 			char tem[6] = "\\*.*";
@@ -146,7 +88,7 @@ void next_file(long &handle, _finddata_t &fileinfo) {//直接找到下一个文�
 	}
 	return;
 }
-//找下一个文件或文件夹(tested)
+//
 void copy(char* dis,char* scr) {
 	int i = 0;
 	while (dis[i] = scr[i] && i < 20) {
@@ -154,10 +96,10 @@ void copy(char* dis,char* scr) {
 	}
 	return;
 }
-//将NEW赋值给OLD(tested)
+//
 float cmp_word(char* out_chain, char* in_chain) {//A<a
 	int length_out_chain = strlen(out_chain), length_in_chain = strlen(in_chain), i = 0;
-	float witch = 0;//确定保留谁
+	float witch = 0;//
 	while (i < length_out_chain && i < length_in_chain) {
 		if (out_chain[i] == in_chain[i]) {
 			if (fabs(witch)>1 && (out_chain[i] > '9'))
@@ -165,13 +107,13 @@ float cmp_word(char* out_chain, char* in_chain) {//A<a
 		}
 		else if (out_chain[i] == in_chain[i] + 'a' - 'A'&&in_chain[i] > '9') {
 			if (!witch)
-				witch = 1;//保留in_chain
+				witch = 1;//in_chain
 			else if (fabs(witch) > 1)
 				return 2 * witch;
 		}
 		else if (out_chain[i] == in_chain[i] - 'a' + 'A'&&out_chain[i] > '9') {
 			if (!witch)
-				witch = -1;//保留out_chain
+				witch = -1;//out_chain
 			else if (fabs(witch) > 1)
 				return 2 * witch;
 		}
@@ -183,13 +125,13 @@ float cmp_word(char* out_chain, char* in_chain) {//A<a
 		}
 		else {
 			if (witch) {
-				return 2 * witch;//判定一定不是同一个单词
+				return 2 * witch;//
 			}
 			else {
 				if (out_chain[i] < in_chain[i])
-					return -2;//判定一定不是同一个单词  out_chain在in_chain之前
+					return -2;//
 				else
-					return 2;//判定一定不是同一个单词  out_chain在in_chain之后
+					return 2;//判  out_chain在in_chain之后
 			}
 		}
 		i++;
@@ -202,7 +144,7 @@ float cmp_word(char* out_chain, char* in_chain) {//A<a
 	if (!out_chain[i]) {
 		while (in_chain[i]) {
 			if (in_chain[i] > '9')
-				return -2;//判定一定不是同一个单词  out_chain在in_chain之前
+				return -2;//
 			i++;
 		}
 		if (!witch) {
@@ -215,7 +157,7 @@ float cmp_word(char* out_chain, char* in_chain) {//A<a
 	else {
 		while (out_chain[i]) {
 			if (out_chain[i] > '9')
-				return 2;//判定一定不是同一个单词  out_chain在in_chain之后
+				return 2;//
 			i++;
 		}
 		if (witch) {
@@ -226,7 +168,7 @@ float cmp_word(char* out_chain, char* in_chain) {//A<a
 	}
 	//return witch;
 }
-//比较俩单词，输出比较情况 0：俩单词一样，保留原来的name 1:保留原来的name -1：保留新的name -2或-3:out_chain在in_chain之前 2或3：out_chain在in_chain之后(tested)
+//
 word* creat_word(char* scr) {
 	if (!scr)
 		return NULL;
@@ -240,9 +182,9 @@ word* creat_word(char* scr) {
 	tem->next_in_num = NULL;
 	return tem;
 }
-//创建word结点
+//
 void upgrade(word* src) {
-	int i = TOP_WORD - 1;//计数器
+	int i = TOP_WORD - 1;//
 	while (i >= 0) {
 		word* work = wordlist[i].chain;
 
@@ -282,7 +224,7 @@ void upgrade(word* src) {
 		}
 		else if (work && src->num == work->num) {
 			if (work == src) {
-				if (!i) {//无路可进
+				if (!i) {//
 					int j = TOP_WORD - 1;
 					while (j > i + 1) {
 						wordlist[j] = wordlist[j - 1];
@@ -294,13 +236,13 @@ void upgrade(word* src) {
 					src->next_in_num = NULL;
 				}
 				else {
-					if (src->num == wordlist[i - 1].chain->num) {//前进
+					if (src->num == wordlist[i - 1].chain->num) {//
 						wordlist[i].chain = src->next_in_num;
 						wordlist[i].num--;
 						wordlist[i + 1].num++;
 						src->next_in_num = wordlist[i + 1].chain;
 					}
-					else {//保留
+					else {//
 						int j = TOP_WORD - 1;
 						if (!src->next_in_num) {
 							while (j > i + 1) {
@@ -373,7 +315,7 @@ void upgrade(word* src) {
 		}
 	}
 }
-//升级
+//
 void input_word(word &head) {
 	if (!head.next_in_name) {
 		head.next_in_name = creat_word(NEW);
@@ -404,12 +346,12 @@ void input_word(word &head) {
 			//work->next_in_name->name=(char*)realloc(work->next_in_name->name, sizeof(char)*strlen(NEW));
 			copy(work->next_in_name->name, NEW);
 		}
-		//upgrade(work->next_in_name);//work->next_in_name要进行升级
+		//upgrade(work->next_in_name);//work->next_in_name
 	}
 	return;
 }
-//按字典顺序插入单词
-int WORD() {//单词的种种处理
+//
+int WORD() {//
 	int a, b, c, d;
 	a = NEW[0];
 	b = NEW[1];
@@ -422,8 +364,8 @@ int WORD() {//单词的种种处理
 	input_word(index_word[a][b][c][d]);
 	return 0;
 }
-//对单词的种种处理
-void WORD_WORD() {//词组的种种处理
+//
+void WORD_WORD() {//
 	if (!OLD[0])
 		return;
 
@@ -442,22 +384,22 @@ int judge_word(char* src) {
 	word_num++;
 	return 1;
 }
-//判断一个字符串是不是单词 1是 0不是(tested)
+//
 void calculate(FILE* fp) {
 	if (!fp) {
 		cout << "打开文件失败！" << endl;
 		return;
 	}
-	//bool nonempty = false;//空
-	char c;//初始化为'1'
+	//bool nonempty = false;//
+	char c;//
 	int NEW_work = 0;
 
-	while (1) {//c属于合法符号
+	while (1) {//c
 		c = fgetc(fp);
-		if (c == EOF) {//文末处理！！！！！！！！！！！！！！！
-			//line_num+=nonempty;//文件之间的行数增加
+		if (c == EOF) {//！！！！！！！！！！！！！！！
+			//line_num+=nonempty;//
 			line_num++;
-			if (judge_word(NEW)) {//有剩余
+			if (judge_word(NEW)) {//
 				WORD();
 				WORD_WORD();
 			}
@@ -466,11 +408,11 @@ void calculate(FILE* fp) {
 			return;
 		}
 
-		//判断是字符
-			//nonempty = true;//非空
+		//
+			//nonempty = true;//
 		if (c == '\n' || c == '\r') {
-			line_num++;//统计行数
-			//nonempty = false;//下一行为空
+			line_num++;//
+			//nonempty = false;//
 		}
 		if ((c > 31 && c < 127))
 			char_num++;
@@ -479,42 +421,42 @@ void calculate(FILE* fp) {
 			NEW[NEW_work] = c;
 			NEW_work++;
 			/*if (NEW_work >word_MAX ) {
-				cout << "出现超长单词" << endl;
+				cout << "" << endl;
 			}*/
 		}
-		else {//出现分隔符
+		else {//
 			NEW_work = 0;
-			if (judge_word(NEW)) {//有更新
+			if (judge_word(NEW)) {//
 				WORD();
 				WORD_WORD();
-				copy(OLD, NEW);//词组的传递
+				copy(OLD, NEW);//
 			}
 			memset(NEW, 0, sizeof(char)*word_MAX);
 		}
 	} 
 }
-//统计单词，词组
-void findfile(_finddata_t &fileinfo) {//找到下一个文件!
+//
+void findfile(_finddata_t &fileinfo) {//
 	while (handle!=-1) {
 		if (!strcmp(".", fileinfo.name) || !strcmp("..", fileinfo.name)) {
 			next_file(handle, fileinfo);
 			if (fileinfo.attrib & 0x00000020)
 				break;
 		}
-		int a = fileinfo.attrib & 0x00000020;//文件>0，文件夹==0
+		int a = fileinfo.attrib & 0x00000020;//
 
 		if (a) {
 			next_file(handle,fileinfo);
 			if (fileinfo.attrib & 0x00000020)
 				break;
 		}
-		else if (!a) {//可以去掉！
+		else if (!a) {//
 			int length = strlen(to_search);
 			char tem[6] = "\\*.*";
 			to_search[length - 3] = '\0';
 			strcat(to_search, fileinfo.name);
 			strcat(to_search, tem);
-			creatnode_handle(strlen(fileinfo.name), handle);//进栈
+			creatnode_handle(strlen(fileinfo.name), handle);//
 			handle = _findfirst(to_search, &fileinfo);
 			if (!strcmp(".", fileinfo.name) || !strcmp("..", fileinfo.name)) {
 				next_file(handle, fileinfo);
@@ -526,7 +468,7 @@ void findfile(_finddata_t &fileinfo) {//找到下一个文件!
 	}
 	return;
 }
-//找到下一个文件(tested)
+//
 void file_output(char* result) {
 	ofstream out(result);
 	out << "char_num :" << char_num << endl;
@@ -567,11 +509,8 @@ void file_output(char* result) {
 	out.close();
 	return;
 }
-int main() {
-	//const char *to_search =  "E:\\vs\\软工作业1\\test and result\\test and result\\newsample\\docs\\csharp\\*.*" ;
-	//读文件用栈
-	//E:\vs\软工作业1\test\test\newsample\*.*
-	//E:\vs\软工作业1\test and result\test and result\*.*
+int main(int argc char **argv) {
+	
 	head->before = head->next = head;
 	head->change = 0;
 	head->handle = -1;
@@ -582,15 +521,15 @@ int main() {
 	//memset(index_word_word, 0, sizeof(word_word)*456976);
 	memset(wordlist, 0, sizeof(top_word)*TOP_WORD);
 	//memset(word_wordlist, 0, sizeof(top_word_word)*TOP_WORD_WORD);
-	struct _finddata_t fileinfo;//初始化
-	//gets(to_search);//真·程序！！！！！！！！！！！！！！！！！！！！！！！！
-	cin >> to_search;//假·程序！！！！！！！！！！！！！！！！！！！！！！！！
+	struct _finddata_t fileinfo;//
+	//gets(to_search);//！！！！！！！！！！！！！！！！！！！！！！！！
+	to_search=argv[1];//！！！！！！！！！！！！！！！！！！！！！
 	
 	handle = _findfirst(to_search, &fileinfo);
 	if (handle == -1)
 		return -1;
 	while (!strcmp(".", fileinfo.name) || !strcmp("..", fileinfo.name))
-		findfile(fileinfo);//一定得输出文件
+		findfile(fileinfo);//
 	while (handle != -1) {
 		char tem[N];
 		strcpy(tem, to_search);
@@ -599,7 +538,7 @@ int main() {
 		strcat(tem, fileinfo.name);
 		FILE* fp = fopen(tem, "r");
 		if (fp) {
-			calculate(fp);//统计开始
+			calculate(fp);//
 			fclose(fp);
 		}
 		file_num++;
