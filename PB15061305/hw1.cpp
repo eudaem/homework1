@@ -1,3 +1,4 @@
+
 /* 
 	WordFrequency.cpp 
 	Author: Liu Ze
@@ -373,8 +374,12 @@ int main(int argc, char *argv[])
 	else {	//if not, then use the default path
 		outpath = "Result.txt";
 	}
-	
-	GetAllFiles(filepath, files);	//get all file paths
+	if(filepath.find(".")){// if the path is a file path
+		files.push_back(filepath);
+	}
+	else{
+		GetAllFiles(filepath, files);	//get all file paths
+	}
 	size = files.size();
 	startTime = clock();
 	for (int i = 0; i < size; i++){	// handle onr file
