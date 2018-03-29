@@ -1,4 +1,6 @@
 //please swithch the Unicode character set to MBCS(Multi-Byte Character System before compiling!!!!
+//It has the function of phrase statistics, but it will crash if the file is too big,so I annotated it out.
+//The problem lies in 410-431 lines and the bug is the kind I never seen and can't get solution on the Internet.
 
 //linux header files
 #ifdef __linux__
@@ -406,6 +408,7 @@ void resultPrint(fileProp *result) {
 	outfile << endl;
 
 	//pring phrase frequency
+	/*
 	map<string, int>::iterator it2;
 	vector<pair<string, int>> arr2;
 	vector<pair<string, int>>::iterator ait2;
@@ -425,6 +428,7 @@ void resultPrint(fileProp *result) {
 		}
 	}
 	arr2.~vector();
+	*/
 	
 }
 
