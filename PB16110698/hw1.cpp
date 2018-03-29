@@ -6,8 +6,10 @@
 #include<algorithm>
 #include<time.h>
 #include<iomanip>
-#include<io.h> //if Windows, use this and dfsFolder()
-//#include<dirent.h>//if linux, use this and traverseFile() and 
+#include<string.h>
+//#include<io.h> //if Windows, use this and dfsFolder()
+#include<dirent.h>//if linux, use this and traverseFile() and 
+#include<sys/stat.h>
 
 using namespace std;
 class Word {
@@ -41,6 +43,7 @@ Phrase::Phrase() {
 Phrase::~Phrase(){}
 
 void dfsFolder(string folderPath, int depth);
+void dfsFolderLinux(string folderPath);
 int wordType(char n);
 bool IsChar(char n);
 void wordOperate(string &str);
@@ -56,7 +59,7 @@ unordered_map<string, Word> wordMap;
 unordered_map<string, Phrase> phraseMap;
 
 //dfs traverse files in Windows, consult https://blog.csdn.net/qq289665044/article/details/48623325 
-
+/*
 void dfsFolder(string folderPath, int depth)
 {
 	ifstream infile;
@@ -93,48 +96,57 @@ void dfsFolder(string folderPath, int depth)
 											      
 	_findclose(handle);
 }
-
-//operate to a file(not a folder)
-void traverseFile(string childPath) {
-	ifstream infile;
-	string strReg;
-	infile.open(childPath, ios::in);
-
-	while (getline(infile, strReg)) {
-		lineSum++;
-		wordOperate(strReg);
-	}
-	infile.close();
-}
+*/
 
 //traverseFile in Linux
-/*
-void listDir(char *path){
-	DIR *pDir; 
-	struct dirent *ent; 
-	int i = 0;
-	char childpath[512]; 
-	pDir = opendir(path); 
-	memset(childpath, 0, sizeof(childpath)); 
-	while ((ent = readdir(pDir)) != NULL)
-		
+void dfsFolderLinux(string folderPath)
+{
+	DIR *dir_ptr;
+	struct stat infobuf;
+	struct dirent *direntp;
+	string name, temp;
+	ifstream infile;
+	string  strReg;
+	if ((dir_ptr = opendir(folderPath.c_str())) == NULL)
+		perror("can not open");
+	else
 	{
-		if (ent->d_type & DT_DIR)
-			
+		while ((direntp = readdir(dir_ptr)) != NULL)
 		{
-			if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
-				continue;
-			sprintf(childpath, "%s/%s", path, ent->d_name);
-			listDir(childpath);
-		}
-		else
-		{
-			sprintf(childpath, "%s/%s", path, ent->d_name);
-			traverseFile(childpath);
+			temp = "";
+			name = direntp->d_name;
+			if (name == "." || name == "..")
+			{
+				;
+			}
+			else
+			{
+				temp += folderPath;
+				temp += "/";
+				temp += name;
+ 
+				if ((stat(temp.c_str(), &infobuf)) == -1)
+					printf("#########\n");
+				if ((infobuf.st_mode & 0170000) == 0040000)
+				{
+
+					dfsFolderLinux(temp);
+				}
+				else
+				{  
+					infile.open(temp, ios::in);
+					while (getline(infile, strReg)) {
+						lineSum++;
+						wordOperate(strReg);
+					}
+					infile.close();
+				}
+			}
 		}
 	}
+	closedir(dir_ptr);
 }
-*/
+
 
 //judge wordType,1:alpha,2:symbol,0:others
 int wordType(char n) {
@@ -305,7 +317,8 @@ int main(int argc, char * argv[]) {
 
 	double timeSum;
 	clock_t tStart = clock();
-	dfsFolder(fileName, 0);
+	//dfsFolder(fileName, 0);
+	dfsFolderLinux(fileName);
 	vector<Word> word= wordTopTen();
 	vector<Phrase> phrase = phraseTopTen();
 	timeSum =(double)(clock() - tStart) / CLOCKS_PER_SEC;
@@ -318,7 +331,6 @@ int main(int argc, char * argv[]) {
 	fout << "NumOfLine:" << lineSum << endl;
 	//printf("Top10 Words:\n");
 	fout << "Top10 Words:" << endl;
-
 	for (int i = 0; i < 10; i++) {
 		fout << setw(12) << word[i].value << " " << word[i].repeatTimes << endl;
 	}
@@ -330,13 +342,4 @@ int main(int argc, char * argv[]) {
 	fout << endl;
 	fout << "TimeSum:" << setprecision(4)<< timeSum <<"S"<< endl;
 	fout.close();
-	/*for (int i = 0; i < 10; i++) {
-		cout << setw(12)<< word[i].value <<" "<< word[i].repeatTimes << endl;
-	}
-	printf("\nTop10 Phrases:\n");
-	for (int i = 0; i < 10; i++) {
-		cout << setw(12)<< phrase[i].firstWord << " " <<setw(12)<< phrase[i].secondWord <<" "<<phrase[i].repeatTimes<< endl;
-	}
-	printf("\nTimeSum：%.2fs\n", timeSum);*/
-
 }
