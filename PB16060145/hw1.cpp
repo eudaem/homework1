@@ -96,7 +96,13 @@ unsigned int Hash(string str) {
 void examineNewWord(vector<word> &wvec, word &newWord) {
 
 	string str = newWord.wordStr;
-	int i = str.length() - 1;
+	int i = str.length();
+	if (i >= 4 && i <= 1024) {
+		i--;
+	}
+	else {
+		return;
+	}
 	while (i >= 0) {
 		if (str[i] >= '0'&&str[i] <= '9') {
 			str[i] = '\0';
@@ -164,11 +170,13 @@ unsigned long getLineNum(string filename) {
 	unsigned long lines = 0;
 	string str;
 	while (!input.eof()) {
-
+		/*
 		if (getline(input, str)) {
 
 			lines++;
-		}
+		}*/
+		getline(input, str);
+		lines++;
 	}
 
 	return lines;
