@@ -5,34 +5,6 @@
 #include <dirent.h>
 #endif
 
-#include <stdio.h>
-#include <tchar.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include<io.h>
-#include<map>
-#include <vector>  
-#include <algorithm>  
-#include <utility> 
-#include<Shlwapi.h>
-#pragma comment(lib,"shlwapi.lib")
-using  namespace std;
-
-
-//result structure
-typedef struct {
-	long charaNum;
-	long lineNum;
-	long wordNum;
-	map<string, int> dict;
-	map<string, int> phrase;
-}fileProp;
-
-// File Statistics.cpp: 定义控制台应用程序的入口点。
-//
-
-#include "stdafx.h"
 
 //result structure
 typedef struct {
