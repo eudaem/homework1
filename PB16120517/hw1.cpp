@@ -1,3 +1,4 @@
+
 #include<iostream>
 #include<io.h>
 #include<fstream>
@@ -244,7 +245,7 @@ void WordMerge(unordered_map<string, MyWord> &mapWord)
 	}
 }
 
-void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze> &mapPharze)		//Words and phrases with the highest statistical frequency
+void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze> &mapPharze,string path)		//Words and phrases with the highest statistical frequency
 {
 	ofstream write;
 	string word[10];					//Record 10 most frequent words
@@ -259,7 +260,7 @@ void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze
 	unordered_map<string, MyWord>::iterator findorigin2;
 	bool isPlacew=false;									//TO judge whether word has been placed 
 	bool isPlacep = false;
-	write.open("C:\\Users\\result.txt");
+	write.open(path+"\\"+"Result.txt");
 	for (int i = 0; i < 10; i++)
 	{
 		for (pharzeiter = mapPharze.begin(); pharzeiter != mapPharze.end(); pharzeiter++)
@@ -345,16 +346,17 @@ void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze
 
 int main(int argc,char **argv)				 //Get the folder path with the command line parameters
 {
-	string path = argv[1];			//Path command line
+	string path =argv[1];			//Path command line
 	unordered_map<string, Pharze> mapPharze;
 	unordered_map<string, MyWord> mapWord;
 	g_pharsesample.frequency = 1;			//Initial variables for initializing phrases
 	SearchFile(path,mapWord,mapPharze);
 	WordMerge(mapWord);						//Merge and write, spend a lot of time
-	WPSort(mapWord, mapPharze);		
+	WPSort(mapWord, mapPharze,path);		
 	cout << "行数总数"<<g_LineNumber << endl;
 	cout << "字符总数" << g_CharacterNumber << endl;
 	cout << "单词总数" << g_Wordnumber << endl;
 	system("pause");
     return 0;
 }
+
