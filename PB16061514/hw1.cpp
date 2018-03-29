@@ -33,14 +33,16 @@ const int PHRASE_HASH_SIZE	= 2000000;
 
 
 struct wnode {
-	std::string format = "";
-	std::string exp = "";
-	int count = 0;
-	wnode *next = NULL;
+	std::string format;
+	std::string exp;
+	int count;
+	wnode *next;
 
 	wnode(const std::string& f, const std::string& e) {
 		format = f;
 		exp = e;
+		count = 0;
+		next = NULL;
 	}
 	~wnode() { if (next) next->~wnode(); }
 };
@@ -50,13 +52,15 @@ struct pnode {
 	const wnode *w1;
 	const wnode *w2;
 	std::string format;
-	int count = 0;
-	pnode *next = NULL;
+	int count;
+	pnode *next;
 
 	pnode(const wnode *pw1, const wnode *pw2, const std::string& f) {
 		w1 = pw1;
 		w2 = pw2;
 		format = f;
+		count = 0;
+		next = NULL;
 	}
 	~pnode() { if (next) next->~pnode(); }
 };
@@ -85,18 +89,27 @@ class WordCounter {
 
 private:
 
-	int num = 0;
-	wnode *pre = NULL;
-	wnode *now = NULL;
+	int num;
+	wnode *pre;
+	wnode *now;
 
-	char exp[WORD_SIZE + 2] = "";
-	int exp_len = 0;
-	bool overflow = false;
-	bool pre_divisor = true;
+	char exp[WORD_SIZE + 2];
+	int exp_len;
+	bool overflow;
+	bool pre_divisor;
 
 	WordPool pool;
 
 public:
+	WordCounter() {
+		num = 0;
+		pre = NULL;
+		now = NULL;
+		exp[0] = 0;
+		exp_len = 0;
+		overflow = false;
+		pre_divisor = true;
+	}
 	void count(char c);
 	void count_eof();
 	int get_word_num() { return num; }
@@ -145,10 +158,14 @@ void traverse_dir(char *path) {
 			counter.count(filepath);
 		}
 	}
+	closedir(pDir);
 }
 
 
 int main(int argc, char **argv) {
+	clock_t start, finish;
+	start = clock();
+
 	if (argc > 1) traverse_dir(argv[1]);
 	else return 1;
 	
@@ -174,6 +191,10 @@ int main(int argc, char **argv) {
 	}
 	result.close();
 
+	finish = clock();
+	cout << "\n\n\ntime situation\n";
+	printf("%f seconds\n", (double)(finish - start)/ CLOCKS_PER_SEC);
+
 	return 0;
 }
 
@@ -190,22 +211,8 @@ bool word_sorted = false;
 bool phrase_sorted = false;
 
 
-int elfhash(const string& s) {
-	unsigned long h = 0;
-	unsigned long g;
-	for (unsigned int i = 0; i < s.size(); i++) {
-		h = (h << 4) + s[i];
-		g = h & 0xF0000000L;
-		if (g) {
-			h ^= g >> 24;
-			h &= ~g;
-		}
-	}
-	return (h & 0x7FFFFFFF);
-}
-
-
-int jshash(const string& s) {
+int my_hash(const string& s) {
+	// js hash
 	int hash = 0;
 
 	for (unsigned int i = 0; i < s.size(); i++) {
@@ -214,34 +221,6 @@ int jshash(const string& s) {
 
 	return (hash & 0x7FFFFFFF);
 }
-
-
-int fnvhash(const string& s) {
-	int fnvprime = 0x811C9DC5;
-	int hash = 0;
-
-	for (unsigned int i = 0; i < s.size(); i++) {
-		hash *= fnvprime;
-		hash ^= (int)s[i];
-	}
-
-	return hash & 0x7FFFFFFF;
-}
-
-
-int bknrhash(const string& s){
-	unsigned int seed = 131; // 31 131 1313 13131 131313 etc..
-	unsigned int hash = 0;
-
-	for (unsigned int i = 0; i < s.size(); i++) {
-		hash = hash * seed + s[i];
-	}
-
-	return (hash & 0x7FFFFFFF);
-}
-
-
-int (*my_hash)(const string& s) = jshash;
 
 
 WordPool::WordPool() {
