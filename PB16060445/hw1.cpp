@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 {
 	char  *p;
 	int a[NUM], b[NUM], i, j, t = 1, l = 1;
-        listDir(argv[1]);
+       listDir(argv[1]);
 	fout = fopen("result.txt", "w");
 	fprintf(fout, "char_number: %d\nline_number: %d\n", characters, lines);
 	fprintf(fout, "word_number: %d\nthe top ten frequency of words: \n", words);
@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-//子函数 
 
 void listDir(char *path) 
 {
