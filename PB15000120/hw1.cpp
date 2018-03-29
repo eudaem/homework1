@@ -5,9 +5,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <dirent.h>
-
 using namespace std;
-
 
 struct pairhash {
 public:
@@ -19,8 +17,7 @@ public:
 };
 
 
-
-class CountInFile{
+class FileWordCounter{
 private:
     char path[512];
     unsigned long charNum;
@@ -28,15 +25,17 @@ private:
     unsigned long wordNum;
     unordered_map<string, pair<string, int> > singleWordFreq;
     unordered_map<pair<string, string>, int, pairhash> doubleWordFreq;
+
     void procFile(char p[]);
+    void procDir(char path[]);
     void addWord(vector<string> &result, string src);
     void calFreq(vector<string> &result);
-    string normalizeString(string a);
+    string normStr(string a);
+
     void selectSinW();
     void selectDouW();
-    void procDir(char path[]);
 public:
-    CountInFile(const char p[]){
+    FileWordCounter(const char p[]){
         strcpy(path,p);
         charNum = 0;
         lineNum = 0;
@@ -47,7 +46,36 @@ public:
 };
 
 
-void CountInFile::procDir(char p[]){
+void FileWordCounter::read() {
+    regex reg1("^[\\.]{0,2}(\\/[\\w-]+)*\\/([\\w-]+\\.)+[\\w-]+$");
+    regex reg2("^[\\.]{0,2}(\\/[\\w-]+)*\\/?$");
+    cmatch cm;
+    if(regex_match(path, cm, reg1)){
+        procFile(path);
+        //cout << "File" << endl;
+    }
+    else if(regex_match(path, cm, reg2)) {
+        procDir(path);
+        //cout << "Folder" << endl;
+    }
+    else{
+        cout << "ERROR: No such file or directory" << endl;
+    }
+}
+
+
+void FileWordCounter::write(){
+    ofstream outf("result.txt");
+    outf << "char_number: " << charNum << endl;
+    outf << "line_number: " << lineNum << endl;
+    outf << "word_number: " << wordNum << endl;
+    outf.close();
+    selectSinW();
+    selectDouW();
+}
+
+
+void FileWordCounter::procDir(char p[]){
     DIR* pDir;
     struct dirent* ent;
     char childpath[512];
@@ -58,12 +86,12 @@ void CountInFile::procDir(char p[]){
             if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
                 continue;
             sprintf(childpath, "%s/%s", p, ent->d_name);
-            printf("path:%s\n", childpath);
+            //printf("path:%s\n", childpath);
             procDir(childpath);
         }
         else{
             sprintf(childpath, "%s/%s", p, ent->d_name);
-            printf("path:%s\n", childpath);
+            //printf("path:%s\n", childpath);
             procFile(childpath);
         }
         memset(childpath,0,sizeof(childpath));
@@ -71,21 +99,54 @@ void CountInFile::procDir(char p[]){
 }
 
 
-void CountInFile::read() {
-    regex reg1("^[\\.]{0,2}(\\/[\\w^ ]+)*\\/([\\w^ ]+\\.)+[\\w^ ^.]+$");
-    regex reg2("^[\\.]{0,2}(\\/[\\w^ ]+)*\\/?$");
-    cmatch cm;
+void FileWordCounter::procFile(char p[]){
+    ifstream input;
+    input.open(p);
+    if (!input.is_open()) {
+        cout << "Cannot open file " << p << endl;
+        return;
+    }
 
-    if(regex_match(path, cm, reg1))
-        procFile(path);
-    if(regex_match(path, cm, reg2))
-        procDir(path);
+    string line, temp;
+    unsigned long length = 0;
+    vector<string> result;
+    int key;
+    while(!input.eof()){
+        getline(input, line);
+        lineNum++;
+        key = 0;
+        length = line.size();
+        for(int i = 0; i < length; i++){
+            if(line[i] >= 32 && line[i] <=126){
+                charNum++;
+            }
+            if(isdigit(line[i]) || isalpha(line[i])){
+                temp += line[i];
+                key = 1;
+            }
+            else{
+                if(temp.size() > 3){
+                    addWord(result, temp);
+                }
+                temp = "";
+                key = 0;
+            }
+        }
+        if(key == 1){
+            if(temp.size() > 3){
+                addWord(result, temp);
+            }
+            temp = "";
+        }
+    }
+    wordNum += result.size();
+
+    calFreq(result);
 }
 
 
-void CountInFile::addWord(vector<string> &result, string src){
+void FileWordCounter::addWord(vector<string> &result, string src){
     int length = src.size();
-    string dst;
     for(int i = 0; i < length - 3;){
         if(!isalpha(src[i])){
             i = i + 1;
@@ -103,66 +164,62 @@ void CountInFile::addWord(vector<string> &result, string src){
             i = i + 4;
             continue;
         }
-        if(length - i <= 0){
-            return;
-        }
-        dst = src.substr(i, length);
-        result.push_back(dst);
+        result.push_back(src.substr(i, length));
         return;
     }
 }
 
 
-void CountInFile::procFile(char p[]){
-    ifstream input;
-    try{
-        input.open(p);
-        if (!input.is_open()) {
-            string err = "Cannot open file ";
-            err += p;
-            err += "!";
-            throw runtime_error(err);
+void FileWordCounter::calFreq(vector<string> &result){
+    string srcStr2, norStr1, norStr2;
+    unsigned long wordNumt = result.size();
+    unordered_map<string, pair<string, int> >::iterator its, prev;
+    unordered_map<pair<string, string>, int, pairhash>::iterator itd;
+
+    if(wordNumt != 0){
+        srcStr2 = result[0];
+        norStr2 = normStr(srcStr2);
+        //cout << srcStr2 << ' ' << norStr2 << endl;
+        its = singleWordFreq.find(norStr2);
+        if(its == singleWordFreq.end()){
+            singleWordFreq[norStr2] = make_pair(srcStr2, 1);
         }
-    }catch(runtime_error error) {
-        cout << error.what();
-        return;
+        else{
+            its->second.second++;
+            if(its->second.first > srcStr2){
+                its->second.first = srcStr2;
+            }
+        }
     }
 
+    for(int i = 1; i < wordNumt; i++){
+        norStr1 = norStr2;
+        srcStr2 = result[i];
+        norStr2 = normStr(srcStr2);
 
-    string line, temp;
-    unsigned long length = 0;
-    vector<string> result;
-    while(!input.eof()){
-        getline(input, line);
-        lineNum++;
-        int key = 0;
-        length = line.size();
-        for(int i = 0; i < length; i++){
-            if(line[i] >= 32 && line[i] <=126){
-                charNum++;
-            }
-            if(isdigit(line[i]) || isalpha(line[i])){
-                temp += line[i];
-                key = 1;
-            }
-            else{
-                addWord(result, temp);
-                temp = "";
-                key = 0;
+        its = singleWordFreq.find(norStr2);
+        if(its == singleWordFreq.end()){
+            singleWordFreq[norStr2] = make_pair(srcStr2, 1);
+        }
+        else{
+            its->second.second++;
+            if(its->second.first > srcStr2){
+                its->second.first = srcStr2;
             }
         }
-        if(key == 1){
-            addWord(result, temp);
-            temp = "";
+
+        itd = doubleWordFreq.find(make_pair(norStr1, norStr2));
+        if(itd == doubleWordFreq.end()){
+            doubleWordFreq[make_pair(norStr1, norStr2)] = 1;
+        }
+        else{
+            itd->second++;
         }
     }
-    wordNum += result.size();
-
-    calFreq(result);
 }
 
 
-string CountInFile::normalizeString(string a){
+string FileWordCounter::normStr(string a){
     string str = a;
     while(isdigit(str.back())){
         str.erase(str.end() - 1);
@@ -177,66 +234,12 @@ string CountInFile::normalizeString(string a){
 }
 
 
-void CountInFile::calFreq(vector<string> &result){
-    string srcStr2, norStr1, norStr2;
-    unsigned long wordNumt = result.size();
-    unordered_map<string, pair<string, int> >::iterator its, prev;
-    unordered_map<pair<string, string>, int, pairhash>::iterator itd;
-
-
-    if(wordNumt != 0){
-        srcStr2 = result[0];
-        norStr2 = normalizeString(srcStr2);
-        //cout << srcStr2 << ' ' << norStr2 << endl;
-        its = singleWordFreq.find(norStr2);
-        if(its == singleWordFreq.end()){
-            singleWordFreq[norStr2] = make_pair(srcStr2, 1);
-        }
-        else{
-            its->second.second++;
-            if(its->second.first > srcStr2){
-                its->second.first = srcStr2;
-            }
-        }
-    }
-
-
-
-    for(int i = 1; i < wordNumt; i++){
-        norStr1 = norStr2;
-        srcStr2 = result[i];
-        norStr2 = normalizeString(srcStr2);
-        //cout << srcStr2 << ' ' << norStr2 << endl;
-
-
-
-        its = singleWordFreq.find(norStr2);
-        if(its == singleWordFreq.end()){
-            singleWordFreq[norStr2] = make_pair(srcStr2, 1);
-        }
-        else{
-            its->second.second++;
-            if(its->second.first > srcStr2){
-                its->second.first = srcStr2;
-            }
-        }
-
-
-        itd = doubleWordFreq.find(make_pair(norStr1, norStr2));
-        if(itd == doubleWordFreq.end()){
-            doubleWordFreq[make_pair(norStr1, norStr2)] = 1;
-        }
-        else{
-            itd->second++;
-        }
-    }
-}
-
-
-void CountInFile::selectSinW(){
+void FileWordCounter::selectSinW(){
     int size = int(singleWordFreq.size());
     int length = min(10, size);
     unordered_map<string, pair<string, int> > temp;
+    ofstream outf("result.txt",ios::app);
+    outf << endl << "the top ten frequency of word: " << endl;
     for(int i = 0; i < length; i++){
         auto key = singleWordFreq.begin();
         for (auto iter = singleWordFreq.begin(); iter != singleWordFreq.end(); iter++){
@@ -244,19 +247,22 @@ void CountInFile::selectSinW(){
                 key = iter;
             }
         }
-        cout << key->first << ": " << key->second.first << ' ' << key->second.second << endl;
+        outf << key->second.first << "\t\t" << key->second.second << endl;
         temp.insert(*key);
         singleWordFreq.erase(key);
     }
     for (auto iter = temp.begin(); iter != temp.end(); iter++){
         singleWordFreq.insert(*iter);
     }
+    outf.close();
 }
 
 
-void CountInFile::selectDouW(){
+void FileWordCounter::selectDouW(){
     int size = int(doubleWordFreq.size());
     int length = min(10, size);
+    ofstream outf("result.txt",ios::app);
+    outf << endl << "the top ten frequency of phrase: " << endl;
     for(int i = 0; i < length; i++){
         auto key = doubleWordFreq.begin();
         for (auto iter = doubleWordFreq.begin(); iter != doubleWordFreq.end(); iter++){
@@ -264,38 +270,19 @@ void CountInFile::selectDouW(){
                 key = iter;
             }
         }
-        cout << key->first.first << ' ' << key->first.second << ": ";
-        cout << singleWordFreq[key->first.first].first << ' ' << singleWordFreq[key->first.second].first << ' ' << key->second << endl;
+        outf << singleWordFreq[key->first.first].first << ' ' << singleWordFreq[key->first.second].first << "\t\t" << key->second << endl;
         doubleWordFreq.erase(key);
     }
 }
 
 
-void CountInFile::write(){
-
-    cout << charNum << ' ' << lineNum << ' ' << wordNum << endl;
-
-    cout << endl;
-    selectSinW();
-    selectDouW();
-}
-
-
 int main(int argc,char* argv[]) {
-    if(argc != 2){
-        cout << "Invalid input path!" << endl;
-        //return 0;
+    if(argc <= 1){
+        cout << "ERROR: No such file or directory" << endl;
+        return -1;
     }
-    const char input[]  = "/Users/xiuyuanc/CLionProjects/wordCounting";
-
-    CountInFile path(input);
-    try{
-        path.read();
-    }catch(invalid_argument error){
-        cout << error.what();
-        return 0;
-    }
+    FileWordCounter path(argv[1]);
+    path.read();
     path.write();
     return 0;
 }
-
