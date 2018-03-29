@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <dirent.h>
 using namespace std;
-
+//Hash function for a pair<a,b>
 struct pairhash {
 public:
     template <typename T, typename U>
@@ -20,11 +20,11 @@ public:
 class FileWordCounter{
 private:
     char path[512];
-    unsigned long charNum;
-    unsigned long lineNum;
-    unsigned long wordNum;
-    unordered_map<string, pair<string, int> > singleWordFreq;
-    unordered_map<pair<string, string>, int, pairhash> doubleWordFreq;
+    unsigned long charNum;//total character number
+    unsigned long lineNum;//total line number
+    unsigned long wordNum;//total word number
+    unordered_map<string, pair<string, int> > singleWordFreq;//stores (standard word, <word for display, word frequency>)
+    unordered_map<pair<string, string>, int, pairhash> doubleWordFreq;//stores (<standard word1, word2>, phrase frequency)
 
     void procFile(char p[]);
     void procDir(char path[]);
@@ -32,8 +32,8 @@ private:
     void calFreq(vector<string> &result);
     string normStr(string a);
 
-    void selectSinW();
-    void selectDouW();
+    void writeSinW();
+    void writeDouW();
 public:
     FileWordCounter(const char p[]){
         strcpy(path,p);
@@ -45,7 +45,7 @@ public:
     void write();
 };
 
-
+//use regex to judge path a file or a directory
 void FileWordCounter::read() {
     regex reg1("^[\\.]{0,2}(\\/[\\w-]+)*\\/([\\w-]+\\.)+[\\w-]+$");
     regex reg2("^[\\.]{0,2}(\\/[\\w-]+)*\\/?$");
@@ -63,18 +63,18 @@ void FileWordCounter::read() {
     }
 }
 
-
+//write file
 void FileWordCounter::write(){
     ofstream outf("result.txt");
     outf << "char_number: " << charNum << endl;
     outf << "line_number: " << lineNum << endl;
     outf << "word_number: " << wordNum << endl;
     outf.close();
-    selectSinW();
-    selectDouW();
+    writeSinW();//write top 10 words
+    writeDouW();//write top 10 phrases
 }
 
-
+//traverse directory in recursion
 void FileWordCounter::procDir(char p[]){
     DIR* pDir;
     struct dirent* ent;
@@ -85,12 +85,12 @@ void FileWordCounter::procDir(char p[]){
         if (ent->d_type & DT_DIR) {
             if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
                 continue;
-            sprintf(childpath, "%s/%s", p, ent->d_name);
+            sprintf(childpath, "%s/%s", p, ent->d_name);//combine together
             //printf("path:%s\n", childpath);
             procDir(childpath);
         }
         else{
-            sprintf(childpath, "%s/%s", p, ent->d_name);
+            sprintf(childpath, "%s/%s", p, ent->d_name);//combine together
             //printf("path:%s\n", childpath);
             procFile(childpath);
         }
@@ -98,7 +98,7 @@ void FileWordCounter::procDir(char p[]){
     }
 }
 
-
+//process a single file
 void FileWordCounter::procFile(char p[]){
     ifstream input;
     input.open(p);
@@ -109,42 +109,42 @@ void FileWordCounter::procFile(char p[]){
 
     string line, temp;
     unsigned long length = 0;
-    vector<string> result;
+    vector<string> result;//result stores all words in this file
     int key;
     while(!input.eof()){
-        getline(input, line);
-        lineNum++;
+        getline(input, line);//read line by line
+        lineNum++;//line_number + 1
         key = 0;
         length = line.size();
         for(int i = 0; i < length; i++){
-            if(line[i] >= 32 && line[i] <=126){
+            if(line[i] >= 32 && line[i] <=126){//char_number + 1
                 charNum++;
             }
-            if(isdigit(line[i]) || isalpha(line[i])){
+            if(isdigit(line[i]) || isalpha(line[i])){//to judge whether it is a word element
                 temp += line[i];
                 key = 1;
             }
             else{
                 if(temp.size() > 3){
-                    addWord(result, temp);
+                    addWord(result, temp);//judge whether temp is a word and add it to vector(result)
                 }
                 temp = "";
                 key = 0;
             }
         }
-        if(key == 1){
+        if(key == 1){//to deal with the last word in a line
             if(temp.size() > 3){
                 addWord(result, temp);
             }
             temp = "";
         }
-    }
+    }//use getline so we don't have to do line_number++ at the end of a file
     wordNum += result.size();
 
     calFreq(result);
 }
 
-
+//judge whether src is a word and add it to vector(result)
 void FileWordCounter::addWord(vector<string> &result, string src){
     int length = src.size();
     for(int i = 0; i < length - 3;){
@@ -169,34 +169,33 @@ void FileWordCounter::addWord(vector<string> &result, string src){
     }
 }
 
-
+//process all words in a file
 void FileWordCounter::calFreq(vector<string> &result){
-    string srcStr2, norStr1, norStr2;
+    string srcStr2, norStr1, norStr2;//norStr2 means normalized string for string_2
     unsigned long wordNumt = result.size();
     unordered_map<string, pair<string, int> >::iterator its, prev;
     unordered_map<pair<string, string>, int, pairhash>::iterator itd;
-
+    //process the first word
     if(wordNumt != 0){
         srcStr2 = result[0];
-        norStr2 = normStr(srcStr2);
-        //cout << srcStr2 << ' ' << norStr2 << endl;
+        norStr2 = normStr(srcStr2);//normalize string_2
         its = singleWordFreq.find(norStr2);
-        if(its == singleWordFreq.end()){
-            singleWordFreq[norStr2] = make_pair(srcStr2, 1);
+        if(its == singleWordFreq.end()){//if the word is not stored
+            singleWordFreq[norStr2] = make_pair(srcStr2, 1);//store it
         }
-        else{
+        else{//update word frequency and word for display
             its->second.second++;
             if(its->second.first > srcStr2){
                 its->second.first = srcStr2;
             }
         }
     }
-
+    //process the following word
     for(int i = 1; i < wordNumt; i++){
-        norStr1 = norStr2;
+        norStr1 = norStr2;//copy string_2 to string_1
         srcStr2 = result[i];
         norStr2 = normStr(srcStr2);
-
+        //same as above
         its = singleWordFreq.find(norStr2);
         if(its == singleWordFreq.end()){
             singleWordFreq[norStr2] = make_pair(srcStr2, 1);
@@ -207,7 +206,7 @@ void FileWordCounter::calFreq(vector<string> &result){
                 its->second.first = srcStr2;
             }
         }
-
+        //process phrase(norStr1, norStr2), similar as above
         itd = doubleWordFreq.find(make_pair(norStr1, norStr2));
         if(itd == doubleWordFreq.end()){
             doubleWordFreq[make_pair(norStr1, norStr2)] = 1;
@@ -218,7 +217,7 @@ void FileWordCounter::calFreq(vector<string> &result){
     }
 }
 
-
+//normalize a string, to delete the digits at the end and make all letters capitals
 string FileWordCounter::normStr(string a){
     string str = a;
     while(isdigit(str.back())){
@@ -233,32 +232,32 @@ string FileWordCounter::normStr(string a){
     return str;
 }
 
-
-void FileWordCounter::selectSinW(){
+//write top 10 words
+void FileWordCounter::writeSinW(){
     int size = int(singleWordFreq.size());
     int length = min(10, size);
-    unordered_map<string, pair<string, int> > temp;
+    unordered_map<string, pair<string, int> > temp;//to store top 10 words
     ofstream outf("result.txt",ios::app);
     outf << endl << "the top ten frequency of word: " << endl;
-    for(int i = 0; i < length; i++){
+    for(int i = 0; i < length; i++){//select top 10
         auto key = singleWordFreq.begin();
         for (auto iter = singleWordFreq.begin(); iter != singleWordFreq.end(); iter++){
             if(key->second.second < iter->second.second){
                 key = iter;
             }
         }
-        outf << key->second.first << "\t\t" << key->second.second << endl;
-        temp.insert(*key);
-        singleWordFreq.erase(key);
+        outf << key->second.first << "\t\t" << key->second.second << endl;//write in file
+        temp.insert(*key);//copy in temp
+        singleWordFreq.erase(key);//and then delete(for select use)
     }
     for (auto iter = temp.begin(); iter != temp.end(); iter++){
-        singleWordFreq.insert(*iter);
+        singleWordFreq.insert(*iter);//insert top 10 words back
     }
     outf.close();
 }
 
-
-void FileWordCounter::selectDouW(){
+//write top 10 phrases, similar as above
+void FileWordCounter::writeDouW(){
     int size = int(doubleWordFreq.size());
     int length = min(10, size);
     ofstream outf("result.txt",ios::app);
