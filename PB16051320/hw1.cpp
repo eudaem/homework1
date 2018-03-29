@@ -3,19 +3,19 @@ Name: Word-frequency statistics
 
 Purpose: This routine recieve a folder path as command line parameter,
 count the characters', lines' and words' number, store the frequency
-of each word and phrase, write top 10 of them and the three number in 
+of each word and phrase, write top 10 of them and the three number in
 the RESULT.txt
 
-Algorithum: using _finddata_ to travel all paths of files; then read 
-the word in the file in order, store them in one hashtable, the hash 
-function is designed for the test set; the same as the phrase which is 
-defined as two adjacent words. I separate this two parts because I run 
+Algorithum: using _finddata_ to travel all paths of files; then read
+the word in the file in order, store them in one hashtable, the hash
+function is designed for the test set; the same as the phrase which is
+defined as two adjacent words. I separate this two parts because I run
 out of my memory, it could be faster to 2 times than now orginally if
 enough.
 
 Input: a folder path as command line parameter
 
-Output: RESULT.txt including the characters', lines' and words' number 
+Output: RESULT.txt including the characters', lines' and words' number
 and the top 10 frequency of words and phrases
 
 Author: Zhikai Chen
@@ -43,7 +43,7 @@ using namespace std;
 #define not_asc -2
 #define arraysize 50
 #define FileEnd -3
-#define max_hashsize 500000
+#define max_hashsize 400000
 #define topten 10
 
 // GLOBAL VARIABLES
@@ -164,7 +164,6 @@ void GetAllFiles(string path, vector<string>& files)
 			{
 				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
 				{
-					//files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 					GetAllFiles(p.assign(path).append("\\").append(fileinfo.name), files);
 				}
 			}
@@ -172,9 +171,6 @@ void GetAllFiles(string path, vector<string>& files)
 			{
 				files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 				location = (char *)p.data();
-				//printf("%s\n", fileinfo.name);
-				//OpenFile(location);
-				//getchar();
 			}
 		} while (_findnext(handle, &fileinfo) == 0);
 		_findclose(handle);
@@ -239,7 +235,7 @@ int Seek1Word(FILE* stream, string &temp)
 	// initialize the variables
 	prelength = 0;
 	ch = '\0';
-	//	InitTemp(flag, arraysize);unnecessary for this program
+	InitTemp(temp);//unnecessary for this program
 
 	// find a word from a start of separator 
 	ch = ReadNextChar(stream);
@@ -414,7 +410,7 @@ int Select1WordForm(ElemType e1, ElemType e2)
 	}
 }
 
-	void CopyWord(ElemType &dest, ElemType src)
+void CopyWord(ElemType &dest, ElemType src)
 {
 	dest.word_prefix.assign(src.word_prefix);
 	dest.word_suffix.assign(src.word_suffix);
@@ -471,10 +467,13 @@ int HashForPhrase(ElemType e1, ElemType e2)
 bool SearchHashWord(HashTable H, ElemType e, Hashptr &p)
 {
 	Hashptr q;
+	Hashptr dq;
 	int hash_result;
 	bool judge_compare;
 
 	q = new HashNode;
+	dq = q;
+
 	hash_result = HashForWord(e);
 	if (hash_result < 0){
 		printf("error");
@@ -494,6 +493,7 @@ bool SearchHashWord(HashTable H, ElemType e, Hashptr &p)
 	else
 	{
 		p = q;
+		delete dq;
 		return false;
 	}
 }
@@ -501,9 +501,11 @@ bool SearchHashWord(HashTable H, ElemType e, Hashptr &p)
 bool SearchHashPhrase(HashTable H, ElemType e1, ElemType e2, Hashptr &p)
 {
 	Hashptr q;
+	Hashptr dq;//trace q to delete q
 	int hash_result;
 
 	q = new HashNode;
+	dq = q;
 	hash_result = HashForPhrase(e1, e2);
 	p = H.elem[hash_result];
 
@@ -520,6 +522,7 @@ bool SearchHashPhrase(HashTable H, ElemType e1, ElemType e2, Hashptr &p)
 	else
 	{
 		p = q;
+		delete dq;
 		return false;
 	}
 }
@@ -596,18 +599,18 @@ bool InsertHashPhrase(HashTable H, ElemType e1, ElemType e2, Hashptr &p)
 
 void VisitHashWord(Hashptr present_node, FILE* fp)
 {
-	fprintf(fp, "%s ", present_node->data.word_prefix);
-	fprintf(fp, "%s ", present_node->data.word_suffix);
+	fprintf(fp, "%s ", present_node->data.word_prefix.c_str());
+	fprintf(fp, "%s ", present_node->data.word_suffix.c_str());
 	fprintf(fp, ":%d\n", present_node->data_count);
 }
 
 void VisitHashPhrase(Hashptr present_node, FILE* fp)
 {
-	fprintf(fp, "%s", present_node->data.word_prefix);
-	fprintf(fp, "%s", present_node->data.word_suffix);
+	fprintf(fp, "%s", present_node->data.word_prefix.c_str());
+	fprintf(fp, "%s", present_node->data.word_suffix.c_str());
 	fprintf(fp, " ");
-	fprintf(fp, "%s", present_node->next_data.word_prefix);
-	fprintf(fp, "%s", present_node->next_data.word_suffix);
+	fprintf(fp, "%s", present_node->next_data.word_prefix.c_str());
+	fprintf(fp, "%s", present_node->next_data.word_suffix.c_str());
 	fprintf(fp, ":%d\n", present_node->data_count);
 }
 
@@ -617,8 +620,10 @@ int main(int argc, char* argv[])
 	//S1: VARIABLES
 	vector<string>files;//store file paths
 	FILE* fp;//point at the present file stream
+	FILE* rfp;//point at the result file stream
 	int i;//accumulator
 	int j;//accumulator
+	int max_frequency;
 	int word_length;
 	int word_prefix_length;
 	int word_suffix_length;
@@ -631,6 +636,7 @@ int main(int argc, char* argv[])
 	HashTable phrases;
 	Hashptr hashpoint;
 	Hashptr nextpoint;
+	Hashptr max_frequency_point;
 	Hashptr first_10_nodes[10];
 
 	//S2: INITISLIZE
@@ -641,6 +647,7 @@ int main(int argc, char* argv[])
 		sums[j] = 0;
 	}
 	filepath = argv[1];
+	max_frequency_point = NULL;
 	words.hashsize = max_hashsize;
 	phrases.hashsize = max_hashsize;
 	InitElem(first_elem);
@@ -650,10 +657,11 @@ int main(int argc, char* argv[])
 	GetAllFiles(filepath, files);
 
 	//S3: TRAVELING ALL FILES FOR WORDS
-	cout << "1st-Reading the file: " << files.size() << "in total" << endl;
+	cout << "Words finding..." << endl;
+	cout << "1st-Reading the file: " << files.size() << " in total" << endl;
 	while (i < files.size())
 	{
-		cout << i << endl;
+		cout << i + 1 << endl;
 		if ((fopen_s(&fp, files.at(i).c_str(), "r")) != 0)
 		{
 			cout << "can not open file:" << endl;
@@ -663,8 +671,7 @@ int main(int argc, char* argv[])
 		// LOOP FOR TRAVELING FILE "i"
 		while (!feof(fp))
 		{
-			/*1:insert the first word*/
-			InitTemp(temp);
+			//1:insert the first word
 			word_length = Seek1Word(fp, temp);
 			//if fp goes to the file's end
 			if (word_length == FileEnd)
@@ -672,8 +679,6 @@ int main(int argc, char* argv[])
 				break;
 			}
 			word_prefix_length = SeparateWord(temp, first_elem);
-			word_suffix_length = word_length - word_prefix_length;
-			InsertHashWord(words, first_elem, hashpoint);
 
 			//initilize
 			InitElem(first_elem);
@@ -682,49 +687,43 @@ int main(int argc, char* argv[])
 		i++;
 	}
 
-	//S3: TRAVEL HASHTABLE FOR FREQUENCY
-	for (i = 0; i < max_hashsize; i++)
-	{
-		hashpoint = words.elem[i];
-		while (hashpoint->next != NULL)
+	//S3: TRAVEL HASHTABLE FOR FREQUENCY	
+	for (j = 0; j < 10; j++)
+	{//every time pick out one top hashpoint
+		max_frequency = 0;
+		for (i = 0; i < words.hashsize; i++)
 		{
-			j = 0;
-			while (hashpoint->next->data_count <= sums[j] && j < 10)
+			hashpoint = words.elem[i];
+			while (hashpoint->next != NULL)
 			{
-				j++;
+				if (hashpoint->next->data_count > max_frequency)
+				{
+					max_frequency = hashpoint->next->data_count;
+					max_frequency_point = hashpoint->next;
+				}
+				hashpoint = hashpoint->next;
 			}
-			if (j != 10)
-			{
-				sums[j] = hashpoint->next->data_count;
-				first_10_nodes[j] = hashpoint->next;
-			}
-			else if (hashpoint->next->data_count > sums[9])
-			{
-				sums[9] = hashpoint->next->data_count;
-				first_10_nodes[9] = hashpoint->next;
-			}
-			hashpoint = hashpoint->next;
 		}
+		first_10_nodes[j] = max_frequency_point;
+		first_10_nodes[j]->data_count = 0;
+		sums[j] = max_frequency;//flag for getting already
 	}
 
 	//S4: PRINT THE WORD RESULT
-	fopen_s(&fp, "RESULT.txt", "w");
-	fprintf(fp, "char_number:%d", CHARS);
-	fprintf(fp, "line_number:%d", LINES);
-	fprintf(fp, "word_number:%d", WORDS);
-	cout << CHARS << endl;
-	cout << LINES << endl;
-	cout << WORDS << endl;
+	fopen_s(&rfp, "Result.txt", "w");
+	fprintf(rfp, "char_number:%d\n", CHARS);
+	fprintf(rfp, "line_number:%d\n", LINES);
+	fprintf(rfp, "word_number:%d\n", WORDS);
+	cout << "char_number:" << CHARS << endl;
+	cout << "line_number:" << LINES << endl;
+	cout << "word_number:" << WORDS << endl;
 
 	for (j = 0; j < 10; j++)
 	{
 		cout << first_10_nodes[j]->data.word_prefix;
 		cout << first_10_nodes[j]->data.word_suffix << ":";
-		cout << first_10_nodes[j]->data_count << endl;
-		/*fprintf(fp, "%s ", first_10_nodes[j]->data.word_prefix);
-		fprintf(fp, "%s ", first_10_nodes[j]->data.word_suffix);
-		fprintf(fp, ":%d\n", first_10_nodes[j]->data_count);*/
-		VisitHashWord(first_10_nodes[j], fp);
+		cout << sums[j] << endl;
+		VisitHashWord(first_10_nodes[j], rfp);
 	}
 
 	//S5: FREE HASHTABLEWORD "words"
@@ -740,12 +739,15 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	cout << "Phrases finding..." << endl;
+
 	//S6: TRAVEL ALL FILES FOR PHRASES
 	i = 0;
-	cout << "2nd-Reading the file: " << files.size() << "in total" << endl;
+	cout << "Phrases finding..." << endl;
+	cout << "2nd-Reading the file: " << files.size() << " in total" << endl;
 	while (i < files.size())
 	{
-		cout << i << endl;
+		cout << i + 1 << endl;
 		if ((fopen_s(&fp, files.at(i).c_str(), "r")) != 0)
 		{
 			cout << "can not open file:" << endl;
@@ -756,7 +758,6 @@ int main(int argc, char* argv[])
 		while (!feof(fp))
 		{
 			//Part1:seek the first word
-			InitTemp(temp);
 			word_length = Seek1Word(fp, temp);
 			//if fp goes to the file's end
 			if (word_length == FileEnd)
@@ -764,12 +765,10 @@ int main(int argc, char* argv[])
 				break;
 			}
 			word_prefix_length = SeparateWord(temp, first_elem);
-			word_suffix_length = word_length - word_prefix_length;
 
 			while (!feof(fp))
 			{
 				//Part2:insert the second word
-				InitTemp(temp);
 				word_length = Seek1Word(fp, temp);
 				//if fp goes to the file's end
 				if (word_length == FileEnd)
@@ -777,12 +776,11 @@ int main(int argc, char* argv[])
 					break;
 				}
 				word_prefix_length = SeparateWord(temp, second_elem);
-				word_suffix_length = word_length - word_prefix_length;
 
 				//3:insert the 1st and 2nd words as a phrase
 				InsertHashPhrase(phrases, first_elem, second_elem, hashpoint);
 
-				//initilize
+				//initialize
 				InitElem(first_elem);
 				CopyWord(first_elem, second_elem);
 				InitElem(second_elem);
@@ -800,28 +798,26 @@ int main(int argc, char* argv[])
 	}
 
 
-	for (i = 0; i < max_hashsize; i++)
+	//S3: TRAVEL HASHTABLE FOR FREQUENCY	
+	for (j = 0; j < 10; j++)
 	{
-		hashpoint = phrases.elem[i];
-		while (hashpoint->next != NULL)
+		max_frequency = 0;
+		for (i = 0; i < phrases.hashsize; i++)
 		{
-			j = 0;
-			while (hashpoint->next->data_count <= sums[j] && j < 10)
+			hashpoint = phrases.elem[i];
+			while (hashpoint->next != NULL)
 			{
-				j++;
+				if (hashpoint->next->data_count > max_frequency)
+				{
+					max_frequency = hashpoint->next->data_count;
+					max_frequency_point = hashpoint->next;
+				}
+				hashpoint = hashpoint->next;
 			}
-			if (j != 10)
-			{
-				sums[j] = hashpoint->next->data_count;
-				first_10_nodes[j] = hashpoint->next;
-			}
-			else if (hashpoint->next->data_count > sums[9])
-			{
-				sums[9] = hashpoint->next->data_count;
-				first_10_nodes[9] = hashpoint->next;
-			}
-			hashpoint = hashpoint->next;
 		}
+		first_10_nodes[j] = max_frequency_point;
+		first_10_nodes[j]->data_count = 0;
+		sums[j] = max_frequency;//flag for getting already
 	}
 
 	//S7: PRINT THE PHRASE RESULT
@@ -831,10 +827,10 @@ int main(int argc, char* argv[])
 		cout << first_10_nodes[j]->data.word_suffix << ' ';
 		cout << first_10_nodes[j]->next_data.word_prefix;
 		cout << first_10_nodes[j]->next_data.word_suffix << ":";
-		cout << first_10_nodes[j]->data_count << endl;
-		VisitHashPhrase(first_10_nodes[j], fp);
+		cout << sums[j] << endl;
+		VisitHashPhrase(first_10_nodes[j], rfp);
 	}
-	fclose(fp);
+	fclose(rfp);
 	return 1;
 	system("pause");
 }
