@@ -1,3 +1,12 @@
+/**
+ * Count character numbers, line numbers, words(specially defined) numbers.
+ * Count word frequency and double word phrase frequency.
+ * Process a file or directory and write result in ./result.txt.
+ * Created by Xiuyuan Chen on 29 Mar. 2018.
+ * Copyright © 2018 Xiuyuan Chen. All rights reserved.
+ * Just a joke, please feel free to copy and write.
+ */
+
 #include <string>
 #include <vector>
 #include <iostream>
