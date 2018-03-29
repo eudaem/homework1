@@ -2,11 +2,18 @@
 #include <string>
 #include <fstream>
 //#include <io.h>
+#include<ctype.h>
 #include <algorithm>
 #include <unordered_map>
-#include <ctime>
-#include <cstring>
+#include <time.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <iostream>
 using namespace std;
 long long TotalNum_chars = 0;
 long long TotalNum_lines = 0;
@@ -17,14 +24,14 @@ struct my_word
     size_t appear_count = 0;
 };
 
-my_word ten_word[11];/* NOLINT */
+my_word ten_word[11];
 struct my_phrase
 {
     string sort_phrase = "zzzzzzzzzzzzzzzzzz";
     size_t appear_count = 0;
 };
 
-my_phrase ten_phrase[11];/* NOLINT */
+my_phrase ten_phrase[11];
 unordered_map<string, my_word>word_count;
 unordered_map<string, size_t>phrase_count;
 
@@ -32,15 +39,15 @@ string transform_word(string raw_word)
 {
     size_t len = raw_word.length();
     string simple_word;
-    //string temp_word = raw_word;
-    transform(raw_word.begin(), raw_word.end(), raw_word.begin(), ::tolower);
+    string temp_word = raw_word;
+    transform(temp_word.begin(), temp_word.end(), temp_word.begin(), ::tolower);
     bool is_start = false;
     for (int i = (int)len - 1; i >= 0; i--)
     {
-        if (isalpha(raw_word[i]))
+        if (isalpha(temp_word[i]))
         {
             is_start = true;
-            simple_word = raw_word.substr(0, (unsigned long)i + 1);
+            simple_word = temp_word.substr(0, i + 1);
             break;
         }
     }
@@ -52,28 +59,28 @@ void EnterMap(string last_word, string current_word)
     string simple_last_word;
     string simple_current_word;
     size_t len = last_word.length();
-    //string temp_word = last_word;
-    transform(last_word.begin(), last_word.end(), last_word.begin(), ::tolower);
+    string temp_word = last_word;
+    transform(temp_word.begin(), temp_word.end(), temp_word.begin(), ::tolower);
     bool is_start = false;
     for (size_t i = len - 1; i >= 0; i--)
     {
-        if (isalpha(last_word[i]))
+        if (isalpha(temp_word[i]))
         {
             is_start = true;
-            simple_last_word = last_word.substr(0, i + 1);
+            simple_last_word = temp_word.substr(0, i + 1);
             break;
         }
     }
     len = current_word.length();
-    //temp_word = current_word;
-    transform(current_word.begin(), current_word.end(), current_word.begin(), ::tolower);
+    temp_word = current_word;
+    transform(temp_word.begin(), temp_word.end(), temp_word.begin(), ::tolower);
     is_start = false;
     for (size_t i = len - 1; i >= 0; i--)
     {
-        if (isalpha(current_word[i]))
+        if (isalpha(temp_word[i]))
         {
             is_start = true;
-            simple_current_word = current_word.substr(0, i + 1);
+            simple_current_word = temp_word.substr(0, i + 1);
             break;
         }
     }
@@ -96,7 +103,7 @@ void NumOfCharsLinesInFile(const string FileLocation)
     int NumberWords = 0;
     char last_char = ' ';
     char current_char;
-    bool word_begin = false;
+    bool wordbegin = false;
     string current_word;
     string last_word;
 
@@ -110,10 +117,6 @@ void NumOfCharsLinesInFile(const string FileLocation)
     buf = (char*)malloc(sz * sizeof(char));
 
     size_t len = fread(buf, sizeof(char), (size_t)sz, fp);
-    //if (len) {
-    //	NumberLines++;
-    //}
-
     for(int i = 0;i<len;i++)
     {
         current_char = buf[i];
@@ -128,22 +131,22 @@ void NumOfCharsLinesInFile(const string FileLocation)
         //判断是否为单词
         if ((!isalpha(last_char)) && (!isdigit(last_char)) && (isalpha(current_char)))
         {
-            word_begin = true;
+            wordbegin = true;
             current_word = current_char;
         }
-        else if (word_begin)
+        else if (wordbegin)
         {
             if ((isalpha(current_char)) || (isdigit(current_char)))
             {
                 //current_word.push_back(current_char);
                 current_word.push_back(current_char);
                 if (i == len-1) {
-                    goto exam;
+                    goto panduan;
                 }
             }
             else
             {
-                exam:				word_begin = false;
+                panduan:				wordbegin = false;
                 //Determines whether the current current word meets the word requirement: the first four characters are all letters
                 if (isalpha(current_word[1]) && isalpha(current_word[2]) && isalpha(current_word[3]))
                 {
@@ -170,38 +173,32 @@ void NumOfCharsLinesInFile(const string FileLocation)
     fp = nullptr;
 }
 
-
 void listDir(char *path)
 {
-    DIR              *pDir ;  //定义一个DIR类的指针
-    struct dirent    *ent  ;   //定义一个结构体 dirent的指针，dirent结构体见上
+    DIR              *pDir ;
+    struct dirent    *ent  ;
     int               i=0  ;
-    char              childpath[512];  //定义一个字符数组，用来存放读取的路径
+    char              childpath[512];
 
-    pDir=opendir(path); //  opendir方法打开path目录，并将地址付给pDir指针
-    memset(childpath,0,sizeof(childpath)); //将字符数组childpath的数组元素全部置零
+    pDir=opendir(path);
+    memset(childpath,0,sizeof(childpath));
 
 
-    while((ent=readdir(pDir))!= nullptr) //读取pDir打开的目录，并赋值给ent, 同时判断是否目录为空，不为空则执行循环体
+    while((ent=readdir(pDir))!=nullptr)
     {
 
-        if(ent->d_type & DT_DIR)  //读取 打开目录的文件类型 并与 DT_DIR进行位与运算操作，即如果读取的d_type类型为DT_DIR (=4 表示读取的为目录)
+        if(ent->d_type & DT_DIR)
         {
 
             if(strcmp(ent->d_name,".")==0 || strcmp(ent->d_name,"..")==0)
-//如果读取的d_name为 . 或者.. 表示读取的是当前目录符和上一目录符, 用contiue跳过，不进行下面的输出
                 continue;
 
-            sprintf(childpath,"%s/%s",path,ent->d_name);  //如果非. ..则将 路径 和 文件名d_name 付给childpath, 并在下一行prinf输出
-            //printf("path:%s\n",childpath);
-
-            listDir(childpath);  //递归读取下层的字目录内容， 因为是递归，所以从外往里逐次输出所有目录（路径+目录名），
-//然后才在else中由内往外逐次输出所有文件名
+            sprintf(childpath,"%s/%s",path,ent->d_name);
+            listDir(childpath);
 
         }
-        else  //如果读取的d_type类型不是 DT_DIR, 即读取的不是目录，而是文件，则直接输出 d_name, 即输出文件名
+        else
         {
-            //cout<<ent->d_name<<endl;  //cout<<childpath<<"/"<<ent->d_name<<endl;  输出文件名 带上了目录
             sprintf(childpath,"%s/%s",path,ent->d_name);
             NumOfCharsLinesInFile(childpath);
 
@@ -211,12 +208,12 @@ void listDir(char *path)
 }
 bool compare(my_word a, my_word b)
 {
-    return a.appear_count>b.appear_count;   //升序排列
+    return a.appear_count>b.appear_count;
 }
 
 bool phrase_compare(my_phrase a, my_phrase b)
 {
-    return a.appear_count>b.appear_count;   //升序排列
+    return a.appear_count>b.appear_count;
 }
 
 void Getten_word() {
@@ -293,3 +290,4 @@ int main(int argc, char *argv[])
     printf("Time taken: %.2fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
     return 0;
 }
+
