@@ -1,4 +1,4 @@
-// char count.cpp : 定义控制台应用程序的入口点。
+// char count.cpp : 
 //
 
 #include "iostream"
@@ -13,13 +13,13 @@ using namespace std;
 
 int getcharnum(char *filename);
 
-void display(unordered_map<string, double> mmp, string str); //unorder_map输出
+void display(unordered_map<string, double> mmp, string str); //unorder_map
 
-void Result(); //输出
+void Result(); //
 
-void BubbleSort();	//冒泡排序
+void BubbleSort();	//
 
-void listFiles(const char * dir);	//遍历文件夹
+void listFiles(const char * dir);	//
 
 int total_char_num = 0;
 
@@ -29,7 +29,7 @@ int total_word_num = 0;
 
 int tmp_num = 0;
 
-int i = 0;	//单词数
+int i = 0;	//
 
 struct dictionary          
 {
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	BubbleSort();
 	clock_t finish = clock();
 	Result();
-	double consumeTime = (double)(finish - start) / CLOCKS_PER_SEC;//注意转换为double的位置
+	double consumeTime = (double)(finish - start) / CLOCKS_PER_SEC;//
 	cout << "\nTime:" << consumeTime << "second！" << endl;
 	system("pause");
 	return 0;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
 void Result()
 {
-	ofstream outfile("Result.txt");//声明一个写文件流对象outfile并打开文件
+	ofstream outfile("Result.txt");//
 	if (!outfile)
 	{
 		cout << "Failed to create file...\n";
@@ -168,26 +168,26 @@ void listFiles(const char * dir)
 	hFind = FindFirstFile(dir, &findData);
 	if (findData.dwFileAttributes != 16)
 	{
-		cout << "非目录路径" << endl;
+		cout << "Please enter the directory path！" << endl;
 		system("pause");
 		exit(0);
 	}
 	char dirNew[100];
 
-	// 向目录加通配符，用于搜索第一个文件 
+	
 	strcpy(dirNew, dir);
 	strcat(dirNew, "\\*.*");
 
 	hFind = FindFirstFile(dirNew, &findData);
 	do
 	{
-		// 是否是文件夹，并且名称不为"."或".." 
+	
 		if ((findData.dwFileAttributes == 16)
 			&& (strcmp(findData.cFileName, ".") != 0)
 			&& (strcmp(findData.cFileName, "..") != 0)
 			)
 		{
-			// 将dirNew设置为搜索到的目录，并进行下一轮搜索 
+		
 			strcpy(dirNew, dir);
 			strcat(dirNew, "\\");
 			strcat(dirNew, findData.cFileName);
@@ -227,7 +227,7 @@ int getcharnum(char *filename)
 	string buff;
 	int p = 0;
 	int j = 0;
-	int m; //word最后一个字母位置
+	int m; //
 	int flag = 1;
 	char c;
 	int num = 0;
@@ -259,12 +259,12 @@ int getcharnum(char *filename)
 		{
 			if (j > 3)
 			{
-				if (!(c >= 48 && c <= 57))   // 单词完结
+				if (!(c >= 48 && c <= 57))   // 
 				{
 					buf.assign(buf, 0, m);
 					if (p == 0)
 					{
-						buff = buf;  //放入词组第一个
+						buff = buf;  //
 						buff += " ";
 						p = 1;
 					}
@@ -283,7 +283,7 @@ int getcharnum(char *filename)
 							phr.at(buff) = tempc;
 						}
 						buff.clear();
-						buff = buf;  //放入词组第一个
+						buff = buf;  //
 						buff += " ";
 					}
 					unordered_map<string, double>::const_iterator got = dic.find(buf);
