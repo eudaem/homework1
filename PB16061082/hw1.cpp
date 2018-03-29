@@ -1,6 +1,5 @@
-
 #include<stdio.h>
-#include<io.h>
+#include<dirent.h>
 #include<string.h>
 #include<iostream>
 #include<stdlib.h>
@@ -11,7 +10,7 @@ using namespace std;
 #define asciim 126
 #define MAXHASH 500000   
 
-int cizu[10000000][4];
+int cizu[30000000][4];
 
 int hashadd(string word);
 int compareword(string word1, string word2);
@@ -26,290 +25,161 @@ typedef struct word_part
 	int flag = 0;
 }word_part;
 
-word_part hashat[MAXHASH];     
+word_part hashat[MAXHASH];
 
 int count_characters = 0;
 int count_lines = 0;
 int count_words = 0;
 
+
 int dfsFolder(string folderPath)
 {
-	_finddata_t FileInfo;
-	string strfind = folderPath + "\\*";
+	DIR *pDir;
+	struct dirent *ent;
 	string temp;
-	int len;
 
-	long Handle = _findfirst(strfind.c_str(), &FileInfo);
+	pDir = opendir((char*)folderPath.data());
 
-	if (Handle == -1L)
+	while ((ent = readdir(pDir)) != NULL)
 	{
-		printf("can not match the folder path\n");
-		return 0;
-	}
-	do {
-		if (FileInfo.attrib & _A_SUBDIR)
+		if (ent->d_type & DT_DIR)
 		{
-			if ((strcmp(FileInfo.name, ".") != 0) && (strcmp(FileInfo.name, "..") != 0))
+			if ((strncmp(ent->d_name, ".", 1024) != 0) && (strncmp(ent->d_name, "..", 1024) != 0))
 			{
-				string newPath = folderPath + "\\" + FileInfo.name;
+				string newPath = folderPath + ent->d_name + "/";
 				dfsFolder(newPath);
 			}
 		}
 		else
 		{
-			len = strlen(FileInfo.name);
-			if (FileInfo.name[len - 1] != 'g' || FileInfo.name[len - 2] != 'p' || FileInfo.name[len - 3] != 'j')
+
+			temp = folderPath + ent->d_name;
+			printf("%s\n", (char*)temp.data());
+			FILE *pFile;
+			char *buffer;
+
+			long lsize;
+			size_t result;
+
+			pFile = fopen((char*)temp.data(), "rb");
+			count_lines++;
+
+			fseek(pFile, 0, SEEK_END);
+			lsize = ftell(pFile);
+			rewind(pFile);
+
+			buffer = (char*)malloc(sizeof(char)*lsize);
+			if (buffer eq NULL)
 			{
-				temp = folderPath + "\\" + FileInfo.name;
-				//printf("%s\n", (char*)temp.data());
+				printf("Memory error\n");
+				exit(1);
+			}
 
-				FILE *pFile;
-				char *buffer;
+			result = fread(buffer, 1, lsize, pFile);
+			if (result != lsize)
+			{
+				printf("Reading error\n");
+				exit(2);
+			}
+			if (buffer eq NULL) return 0;
 
-				long lsize;
-				size_t result;
-				errno_t err;
+			int i = 0;
 
-				err = fopen_s(&pFile, (char*)temp.data(), "rb");
-				count_lines++;
-				if (err != 0)
+			char *p = buffer;
+			int word_len;
+			string word_now;
+
+			while (*p != '\0')
+			{
+				if (*p eq '\n')
 				{
-					printf("File error\n");
-					exit(0);
+					count_lines++;
+					p++;
+					if (*p == '\0')break;
+					if (*p >= 32 && *p <= asciim) count_characters++;
 				}
-
-				fseek(pFile, 0, SEEK_END);
-				lsize = ftell(pFile);
-				rewind(pFile);
-
-				buffer = (char*)malloc(sizeof(char)*lsize);
-				if (buffer eq NULL)
+				else if (*p >= 32 && *p <= asciim)                  //get one letter after one loop
 				{
-					printf("Memory error\n");
-					exit(1);
-				}
+					word_len = 0;
+					word_now = "";
 
-				result = fread(buffer, 1, lsize, pFile);
-				if (result != lsize)
-				{
-					printf("Reading error\n");
-					exit(2);
-				}
-				if (buffer eq NULL) return 0;
-
-				int i = 0;
-
-				char *p = buffer;
-				int word_len;
-				string word_now;
-
-				while (*p != '\0')
-				{
-					if (*p eq '\n')
+					while (!((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z'))) //when *p is not letter,then only count it and skip 
 					{
-						count_lines++;
 						p++;
+						if (*p == '\0')break;
+						if (*p eq '\n')	break;
 						if (*p >= 32 && *p <= asciim) count_characters++;
 					}
-					else if (*p >= 32 && *p <= asciim)                  //get one letter after one loop
-					{
-						word_len = 0;
-						word_now = "";
 
-						while (!((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z'))) //when *p is not letter,then only count it and skip 
+					if (*(p - 1) >= '0'&&*(p - 1) <= '9')    //123a is not word
+					{
+						while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
 						{
 							p++;
 							if (*p == '\0')break;
-							if (*p eq '\n')	break;
 							if (*p >= 32 && *p <= asciim) count_characters++;
 						}
-
-						if (*(p - 1) >= '0'&&*(p - 1) <= '9')    //123a is not word
-						{
-							while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
-							{
-								p++;
-								if (*p >= 32 && *p <= asciim) count_characters++;
-							}
-							continue;
-						}
-
-						while (((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z')) && word_len<4)
-						{
-							word_now.push_back(*p);
-							word_len++;
-							p++;
-							if (*p >= 32 && *p <= asciim) count_characters++;
-						}
-
-						if (word_len >= 4)         //find a word successfully
-						{
-							while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
-							{
-								word_now.push_back(*p);
-								p++;
-								if (*p >= 32 && *p <= asciim) count_characters++;
-							}
-							count_words++;
-							hashadd(word_now);
-						}
-						else                        //the situation that asd123
-						{
-							while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
-							{
-								p++;
-								if (*p >= 32 && *p <= asciim) count_characters++;
-							}
-						}
+						continue;
 					}
-					else
+
+					while (((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z')) && word_len < 4)
 					{
+						word_now.push_back(*p);
+						word_len++;
 						p++;
+						if (*p == '\0')break;
 						if (*p >= 32 && *p <= asciim) count_characters++;
 					}
-				}
-				if (*(p - 1) eq '\n') count_lines--;
-				fclose(pFile);
-				free(buffer);
-			}
-		}
-	} while (_findnext(Handle, &FileInfo) == 0);
 
-	_findclose(Handle);
+					if (word_len >= 4)         //find a word successfully
+					{
+						while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
+						{
+							word_now.push_back(*p);
+							p++;
+							if (*p == '\0')break;
+							if (*p >= 32 && *p <= asciim) count_characters++;
+						}
+						count_words++;
+						hashadd(word_now);
+					}
+					else                        //the situation that asd123
+					{
+						while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
+						{
+							p++;
+							if (*p == '\0')break;
+							if (*p >= 32 && *p <= asciim) count_characters++;
+						}
+					}
+				}
+				else
+				{
+					p++;
+					if (*p == '\0')break;
+					if (*p >= 32 && *p <= asciim) count_characters++;
+				}
+			}
+			if (*(p - 1) eq '\n') count_lines--;
+			fclose(pFile);
+			free(buffer);
+		}
+	}
+	closedir(pDir);
 	return 0;
 }
 
 FILE *fp;
-int openfile(string temp)
-{
-	FILE *pFile;
-	char *buffer;
-
-	long lsize;
-	size_t result;
-	errno_t err;
-
-	err = fopen_s(&pFile, (char*)temp.data(), "rb");
-	count_lines++;
-	if (err != 0)
-	{
-		printf("File error\n");
-		exit(0);
-	}
-
-	fseek(pFile, 0, SEEK_END);
-	lsize = ftell(pFile);
-	rewind(pFile);
-
-	buffer = (char*)malloc(sizeof(char)*lsize);
-	if (buffer eq NULL)
-	{
-		printf("Memory error\n");
-		exit(1);
-	}
-
-	result = fread(buffer, 1, lsize, pFile);
-	if (result != lsize)
-	{
-		printf("Reading error\n");
-		exit(2);
-	}
-	if (buffer eq NULL) return 0;
-
-	int i = 0;
-
-	char *p = buffer;
-	int word_len;
-	string word_now;
-
-	while (*p != '\0')
-	{
-		if (*p eq '\n')
-		{
-			count_lines++;
-			p++;
-			if (*p >= 32 && *p <= asciim) count_characters++;
-		}
-		else if (*p >= 32 && *p <= asciim)                  //get one letter after one loop
-		{
-			word_len = 0;
-			word_now = "";
-
-			while (!((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z'))) //when *p is not letter,then only count it and skip 
-			{
-				p++;
-				if (*p == '\0')break;
-				if (*p eq '\n')	break;
-				if (*p >= 32 && *p <= asciim) count_characters++;
-			}
-
-			if (*(p - 1) >= '0'&&*(p - 1) <= '9')    //123a is not word
-			{
-				while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
-				{
-					p++;
-					if (*p >= 32 && *p <= asciim) count_characters++;
-				}
-				continue;
-			}
-
-			while (((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z')) && word_len<4)
-			{
-				word_now.push_back(*p);
-				word_len++;
-				p++;
-				if (*p >= 32 && *p <= asciim) count_characters++;
-			}
-
-			if (word_len >= 4)         //find a word successfully
-			{
-				while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
-				{
-					word_now.push_back(*p);
-					p++;
-					if (*p >= 32 && *p <= asciim) count_characters++;
-				}
-				count_words++;
-				hashadd(word_now);
-			}
-			else                        //the situation that asd123
-			{
-				while ((*p >= 'a'&&*p <= 'z') || (*p >= 'A'&&*p <= 'Z') || (*p >= '0'&&*p <= '9'))
-				{
-					p++;
-					if (*p >= 32 && *p <= asciim) count_characters++;
-				}
-			}
-		}
-		else
-		{
-			p++;
-			if (*p >= 32 && *p <= asciim) count_characters++;
-		}
-	}
-	if (*(p - 1) eq '\n') count_lines--;
-	fclose(pFile);
-	free(buffer);
-}
 
 int main(int argc, char* argv[])
 {
 	string File = argv[1];
-	//string File = "C:\\Users\\Geng Zigang\\Desktop\\newsample";
+	//string File = "C:\\Users\\Geng Zigang\\Desktop\\新建文本文档.txt";
 
-	//fopen_s(&fp, "C:\\Users\\Geng Zigang\\Desktop\\tx2t.txt", "w");
-	fopen_s(&fp, "result", "w");
-	_finddata_t FileInfo1;
-	string strfind1 = File + "\\*";
+	//fopen_s(&fp, "C:\\Users\\Geng Zigang\\Desktop\\tx4t.txt", "w");
+	fp = fopen("result", "w");
 
-	long Handle1 = _findfirst(strfind1.c_str(), &FileInfo1);
-
-	if (Handle1 == -1L)
-	{
-		openfile(File);
-	}
-	else 
-		dfsFolder(File);
+	dfsFolder(File);
 
 	Select();
 	fprintf(fp, "-----------\n");
@@ -318,7 +188,6 @@ int main(int argc, char* argv[])
 	fprintf(fp, "word is %d\ncharacter is%d \nline is%d\n", count_words, count_characters, count_lines);
 	printf("success\n");
 	fclose(fp);
-	_findclose(Handle1);
 	return 0;
 }
 
@@ -338,7 +207,7 @@ int Select() {
 		if (max != 0)
 		{
 			hashat[maxi].flag = 1;
-			fprintf(fp, "%d：%s，its number is %d\n", j + 1, (char*)hashat[maxi].word.data(), hashat[maxi].word_num);
+			fprintf(fp, "%d is %s,its number is %d\n",j+1,(char*)hashat[maxi].word.data(),max);
 		}
 		else fprintf(fp, "%d does not exist\n", j + 1);
 		j++;
@@ -351,7 +220,7 @@ int Selectcizu() {
 	while (j < 10) {
 		max = 0;
 		maxi = 0;
-		for (i = 0; i < MAXHASH * 20; i++)
+		for (i = 0; i < MAXHASH * 40; i++)
 		{
 			if (cizu[i][2] > max && cizu[i][3] == 0)
 			{
@@ -384,19 +253,17 @@ int hashadd(string word)
 	{
 		if (word[i] >= 'A' && word[i] <= 'Z')
 		{
-			hashnum += (word[i] - 'A') * 7000 / (con + 1);
+			hashnum += (word[i] - 'A') * 6000 / (con + 1);
 			con++;
 		}
 		else if (word[i] >= 'a' && word[i] <= 'z')
 		{
-			hashnum += (word[i] - 'a') * 7000 / (con + 1);
+			hashnum += (word[i] - 'a') * 6000 / (con + 1);
 			con++;
 		}
 		i++;
 	}
 	string aaa = "that";
-	/*flag1 = compareword(word, aaa);
-	if (flag1 != 3) fprintf(fp, "%s\n", (char*)word.data());*/
 loop:
 	if (hashat[hashnum].word_num eq 0)
 	{
@@ -449,7 +316,7 @@ loop:
 	}
 
 	before1 = hashnum;
-	before = hashnum * 20;
+	before = hashnum * 40;
 	return 0;
 }
 
@@ -475,11 +342,12 @@ int compareword(string word1, string word2)
 		else break;
 		j--;
 	}
-	flag = _strcmpi((char*)word1.data(), (char *)word2.data());
+	flag = strncasecmp(word1.c_str(), word2.c_str(), 1024);
 	if (flag != 0) return 3;
-	else {
-		big_flag = strcmp((char *)word1.data(), (char *)word2.data());
+	else
+	{
+		big_flag = strncmp((char *)word1.data(), (char *)word2.data(), 1024);
 		if (big_flag == 0) big_flag++;
-		return big_flag;
+		return 0;
 	}
 }
