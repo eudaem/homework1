@@ -1,4 +1,5 @@
 
+#include "stdafx.h"
 #include<iostream>
 #include<io.h>
 #include<fstream>
@@ -19,7 +20,7 @@ typedef struct MyWord			//The storage of the original word in the structure and 
 {
 	string originword;
 	int    frequency;
-	string Maxword;
+	string originprefix;
 }MyWord;
 
 typedef struct Pharze			//Storage of phrases and frequency of appearance in a structure
@@ -114,26 +115,33 @@ void CounterPhrase(string partword, unordered_map<string, Pharze> &mapPharze)			
 void CounterWord(string singleword, unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze> &mapPharze)		//Count the total number of words and the number of words and phrases
 	{
 	if (size(singleword) > 1024) { return; }
-	unordered_map<string, MyWord>::iterator worditer;
-	unordered_map<string, MyWord>::iterator worditer_s;
 	int wordend = 0;    //Used to record the end of the word 
 	int numberinit = 0;	//Used to record the starting position of a number in a word
 	string word_prefix; //Used to record prefixes of words
 	MyWord word_detail; //Used to record full words and frequencies
+	unordered_map<string,MyWord>::iterator worditer;
 	word_detail.frequency = 1;
 	g_Wordnumber++;
 	wordend = size(singleword);
 	for (numberinit = wordend-1; JudgeNumber(singleword.at(numberinit)); numberinit--){}
-	numberinit++;										//Find the starting position of the number
+	numberinit++;		//Find the starting position of the number
+	word_detail.originprefix= singleword.substr(0, numberinit);
+	for (int i = 0; i < numberinit; i++)
+	{
+		if ((singleword.at(i) <= 'Z') && (singleword.at(i) >= 'A'))
+		{
+			singleword.at(i) = singleword.at(i) + 32;
+		}
+	}
 	word_prefix = singleword.substr(0, numberinit);		//Record prefix
 	word_detail.originword = singleword;
 	worditer = mapWord.find(word_prefix);				//Whether there is the same prefix in map
 	if (worditer != mapWord.end())
 	{
 		worditer->second.frequency++;					//The word frequency plus one of the word
-		if (strcmp(word_detail.originword.c_str(), worditer->second.originword.c_str())>0)		//Find the lexicographic sorting earlier in the map
+		if (strcmp(word_detail.originprefix.c_str(), worditer->second.originprefix.c_str())<0)		//Find the lexicographic sorting earlier in the map
 			{
-					worditer->second.originword = word_detail.originword;
+					worditer->second.originprefix = word_detail.originprefix;
 			}
 	}
 	else
@@ -226,24 +234,6 @@ void SearchFile(string folderpath, unordered_map<string,MyWord> &mapWord, unorde
 	} while (_findnext(Handle, &fileinfo) != -1);
 	_findclose(Handle);
 }
-void WordMerge(unordered_map<string, MyWord> &mapWord)
-{
-	unordered_map<string, MyWord>::iterator worditer;
-	unordered_map<string, MyWord>::iterator worditer_s;
-	for (worditer = mapWord.begin(); worditer != mapWord.end(); worditer++)
-	{
-		for (worditer_s = mapWord.begin(); worditer_s != mapWord.end(); worditer_s++)		//Conversion case
-		{
-
-				if (JudgeCase(worditer->first, worditer_s->first))
-				{
-					worditer->second.frequency = worditer_s->second.frequency+worditer->second.frequency;
-					worditer_s->second.frequency = 0;
-					worditer_s->second.Maxword = worditer->first;
-				}
-		}
-	}
-}
 
 void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze> &mapPharze,string path)		//Words and phrases with the highest statistical frequency
 {
@@ -268,11 +258,8 @@ void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze
 			if (pharzeiter->second.frequency > pharsefrequency[i])
 			{
 				findorigin1 = mapWord.find(pharzeiter->second.firstword);
-				if (findorigin1->second.frequency == 0) { pharzeiter->second.originword = findorigin1->second.Maxword; }
-				else { pharzeiter->second.originword = findorigin1->first; }
 				findorigin2 = mapWord.find(pharzeiter->second.secondword);
-				if (findorigin2->second.frequency == 0) { pharzeiter->second.originword =pharzeiter->second.originword+" "+ findorigin2->second.Maxword; }
-				else { pharzeiter->second.originword = pharzeiter->second.originword+" "+ findorigin2->first; }
+				pharzeiter->second.originword = findorigin1->second.originprefix + " " + findorigin2->second.originprefix;
 				pharsefrequency[i] = pharzeiter->second.frequency;
 				pharze[i] = pharzeiter->second.originword;
 				pmax = pharzeiter;
@@ -292,7 +279,7 @@ void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze
 			if (worditer->second.frequency > wordfrequency[i])
 			{
 				wordfrequency[i] = worditer->second.frequency;
-				word[i] = worditer->first;
+				word[i] = worditer->second.originprefix;
 				wmax = worditer;
 				isPlacep = true;
 			}
@@ -346,12 +333,11 @@ void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze
 
 int main(int argc,char **argv)				 //Get the folder path with the command line parameters
 {
-	string path =argv[1];			//Path command line
+	string path = argv[1];			//Path command line
 	unordered_map<string, Pharze> mapPharze;
 	unordered_map<string, MyWord> mapWord;
 	g_pharsesample.frequency = 1;			//Initial variables for initializing phrases
 	SearchFile(path,mapWord,mapPharze);
-	WordMerge(mapWord);						//Merge and write, spend a lot of time
 	WPSort(mapWord, mapPharze,path);		
 	cout << "行数总数"<<g_LineNumber << endl;
 	cout << "字符总数" << g_CharacterNumber << endl;
@@ -359,4 +345,3 @@ int main(int argc,char **argv)				 //Get the folder path with the command line p
 	system("pause");
     return 0;
 }
-
