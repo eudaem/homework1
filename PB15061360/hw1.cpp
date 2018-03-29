@@ -370,12 +370,12 @@ void check_repeat(char *word)
 
 	while (p)
 	{       
-		for(j=199;j>0;j--)
+		for(j=50;j>0;j--)
 		{
 		  if(check_letter(p->word[j])==1) break;
 		}
 
-		for(u=199;u>0;u--)
+		for(u=50;u>0;u--)
 		{
 		  if(check_letter(word[u])==1) break;
 		}
@@ -434,12 +434,12 @@ void check_gro_repeat(char *word, char *lastword)
 	
 	while (p1)
 	{       
-		for(j=199;j>0;j--)
+		for(j=50;j>0;j--)
 		{
 		  if(check_letter(p1->word[j])==1) break;
 		}
 
-		for(u=199;u>0;u--)
+		for(u=50;u>0;u--)
 		{
 		  if(check_letter(lastword[u])==1) break;
 		}
@@ -468,12 +468,12 @@ void check_gro_repeat(char *word, char *lastword)
 	same=0;
 	while (p2)
 	{       
-		for(j=199;j>0;j--)
+		for(j=50;j>0;j--)
 		{
 		  if(check_letter(p2->word[j])==1) break;
 		}
 
-		for(u=199;u>0;u--)
+		for(u=50;u>0;u--)
 		{
 		  if(check_letter(word[u])==1) break;
 		}
