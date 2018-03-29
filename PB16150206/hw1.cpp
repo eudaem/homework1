@@ -1,9 +1,23 @@
 //please swithch the Unicode character set to MBCS(Multi-Byte Character System before compiling!!!!
 
-//header files
+//linux header files
 #ifdef __linux__
 #include <dirent.h>
 #endif
+//windows header files
+#include <stdio.h>
+#include <tchar.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include<io.h>
+#include<map>
+#include <vector>  
+#include <algorithm>  
+#include <utility> 
+#include<Shlwapi.h>
+#pragma comment(lib,"shlwapi.lib")
+using  namespace std;
 
 
 //result structure
