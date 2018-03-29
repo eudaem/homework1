@@ -1,19 +1,11 @@
 #include <iostream>
-#include <string>
 #include <fstream>
-//#include <io.h>
-#include<ctype.h>
 #include <algorithm>
 #include <unordered_map>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <ctime>
+#include <cstring>
 #include <dirent.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <iostream>
+
 using namespace std;
 long long TotalNum_chars = 0;
 long long TotalNum_lines = 0;
@@ -257,9 +249,8 @@ void Getten_phrase()
 
 int main(int argc, char *argv[])
 {
-    clock_t tStart = clock();
-    char LOCATION[1050] = "/home/ruizhao/Documents/newsample";
-    listDir(LOCATION);
+    //clock_t tStart = clock();
+    listDir(argv[1]);
     Getten_word();
     Getten_phrase();
     ofstream result;
@@ -287,7 +278,7 @@ int main(int argc, char *argv[])
         result << word_count[phrase_now.substr(0, k)].sort_word << ' ' << word_count[phrase_now.substr(k + 1, x - k - 1)].sort_word <<" "<< ten_phrase[i].appear_count << endl;
     }
     result.close();
-    printf("Time taken: %.2fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
+    //printf("Time taken: %.2fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
     return 0;
 }
 
