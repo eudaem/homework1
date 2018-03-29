@@ -1,9 +1,6 @@
-#include "targetver.h"
+#include "stdafx.h"
 #include "iostream"
 #include "fstream"
-#include "stdio.h"
-#include "stdlib.h"
-#include "tchar.h"
 #include "io.h"
 #include "vector"  
 #include "cstring"
@@ -47,8 +44,7 @@ int main(int argc, char *argv[])
 {
 	vector<char *> allPath;
 	size_t pathNum;
-	string input; // = "C:\\Users\\CZT\\Desktop\\TEST\\TEST4.txt";
-	input = argv[1];
+	string input = argv[1];// = "C:\\Users\\CZT\\Desktop\\测试集与参考结果\\newsample";
 
 	if (argc != 2)		//input checking
 		cout << "input error!" << endl;
@@ -115,7 +111,6 @@ int main(int argc, char *argv[])
 						printPhraseN = ptrTemp->secondWord;
 						clear = ptrTemp;
 					}
-
 					ptrTemp = ptrTemp->next;
 				}
 			}
@@ -209,7 +204,7 @@ bool Statistics_of_File(char *filePath)
 	{
 		getline(operateFile, singleLine);
 		textLine++;
-		if (!operateFile.eof())
+		if (operateFile.eof() == NULL)
 			singleLine += " ";
 
 		for (size_t i = 0; i < singleLine.size(); i++)
@@ -291,7 +286,7 @@ MyWC *putIntoWordList(string getWord)
 		}
 	}
 
-	if (!ptrOfWord[offset])
+	if (ptrOfWord[offset] == NULL)
 	{
 		ptrOfWord[offset] = new MyWC;
 		ptrOfWord[offset]->word = getWord;
@@ -314,7 +309,7 @@ MyWC *putIntoWordList(string getWord)
 				break;
 			}
 
-			if (!ptrTemp->next)
+			if (ptrTemp->next == NULL)
 			{
 				ptrTemp->next = new MyWC;
 				ptrTemp = ptrTemp->next;
@@ -338,6 +333,7 @@ MyWC *putIntoWordList(string getWord)
 void putIntoGroupList(MyWC *getFirst, MyWC *getSecond)
 {
 	size_t offset = 0;
+
 	string wordF, wordS;
 	wordF = getFirst->trimmed;
 	wordS = getSecond->trimmed;
@@ -362,6 +358,7 @@ void putIntoGroupList(MyWC *getFirst, MyWC *getSecond)
 	else
 	{
 		ptrTemp = ptrOfGroup[offset];
+
 		while (1)
 		{
 			if ((ptrTemp->firstWord)->trimmed == wordF && (ptrTemp->secondWord)->trimmed == wordS)
@@ -389,3 +386,4 @@ void putIntoGroupList(MyWC *getFirst, MyWC *getSecond)
 		}
 	}
 }
+
