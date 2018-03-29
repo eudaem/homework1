@@ -679,7 +679,7 @@ int main(int argc, char* argv[])
 				break;
 			}
 			word_prefix_length = SeparateWord(temp, first_elem);
-
+			InsertHashWord(words, first_elem, hashpoint);
 			//initilize
 			InitElem(first_elem);
 		}
@@ -738,8 +738,6 @@ int main(int argc, char* argv[])
 			hashpoint = nextpoint;
 		}
 	}
-
-	cout << "Phrases finding..." << endl;
 
 	//S6: TRAVEL ALL FILES FOR PHRASES
 	i = 0;
