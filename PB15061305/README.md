@@ -2,7 +2,7 @@
 ## About
 This code finish the task to count the number of characters, words, phrases and analysis them.
 You can see a more detailed report on my blog: [http://www.cnblogs.com/Franzkfk/](http://www.cnblogs.com/Franzkfk/)
-Or you can visit my github: [https://github.com/LiuzeGit/WordFrequency](https://github.com/LiuzeGit/WordFrequency)
+Or you can visit my github: [https://github.com/LiuzeGit](https://github.com/LiuzeGit)
 ## To Build
 ### Windows
 In Windows, make sure you have preprocessor macro: `WIN32`,and use `C++11`
