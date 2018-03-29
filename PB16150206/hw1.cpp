@@ -1,19 +1,38 @@
 //please swithch the Unicode character set to MBCS(Multi-Byte Character System before compiling!!!!
 
 //header files
+#ifdef __linux__
+#include <dirent.h>
+#endif
+
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include<map>
 #include<io.h>
+#include<map>
 #include <vector>  
 #include <algorithm>  
 #include <utility> 
 #include<Shlwapi.h>
 #pragma comment(lib,"shlwapi.lib")
 using  namespace std;
+
+
+//result structure
+typedef struct {
+	long charaNum;
+	long lineNum;
+	long wordNum;
+	map<string, int> dict;
+	map<string, int> phrase;
+}fileProp;
+
+// File Statistics.cpp: 定义控制台应用程序的入口点。
+//
+
+#include "stdafx.h"
 
 //result structure
 typedef struct {
@@ -42,8 +61,55 @@ void phraseStat(string p,fileProp *result);
 
 void resultPrint(fileProp *result);
 
+#ifdef WIN32
+void DFS(string p, fileProp *result) {
+	_finddata_t file_info;
+	string current_path = p + "/*.*";
+	long handle = _findfirst(current_path.c_str(), &file_info);
+	if (-1L == handle)
+	{
+		cout << "cannot match the path" << endl;
+		return;
+	}
+	do {
+		if (file_info.attrib & _A_SUBDIR) {
+			if ((strcmp(file_info.name, "..") != 0) && (strcmp(file_info.name, ".") != 0))
+				DFS(p + '/' + file_info.name, result);
+		}
+		else {
+			cout << p << "\\" << file_info.name << endl;
+			fileRead(p + "\\" + file_info.name, result);
+		}
+	} while (_findnext(handle, &file_info) == 0);
+	_findclose(handle);
+}
+#endif
+
+#ifdef __linux__
+void DFS(string path, fileProp *result)
+{
+	string name;
+	DIR* dir = opendir(path.c_str());
+	dirent* p = NULL;
+	while ((p = readdir(dir)) != NULL)
+	{
+		if (p->d_name[0] != '.')
+		{
+			string name = path + "/" + string(p->d_name);
+			fileRead(name, result);
+			if (p->d_type == 4) {
+				GetAllFiles(name, files);
+			}
+		}
+
+	}
+	closedir(dir);
+
+}
+#endif
+
 //main
-int main()
+int main(int argc,char *argv[])
 {
 	fileProp *result = new fileProp;
 	result->charaNum = 0;
@@ -51,8 +117,9 @@ int main()
 	result->wordNum = 0;
 	string fileName;
 	fstream fileEx;
-	cout << "Please input the name of the file/folder." << endl;
-	getline(cin, fileName);
+	fileName = argv[1];
+//	cout << "Please input the name of the file/folder." << endl;
+//	getline(cin, fileName);
 	fileEx.open(fileName, ios::in);
 	if (isSourceFile(fileName)) {
 		fileRead(fileName, result);
@@ -76,6 +143,7 @@ void fileRead(string p, fileProp *result) {
 	phraseStat(p, result);
 }
 
+
 bool dirScan(string p, fileProp *result) {
 	_finddata_t file_info;
 	string current_path = p + "/*.*";
@@ -90,27 +158,6 @@ bool dirScan(string p, fileProp *result) {
 	return true;
 }
 
-void DFS(string p, fileProp *result) {
-	_finddata_t file_info;
-	string current_path = p + "/*.*";
-	long handle = _findfirst(current_path.c_str(), &file_info);
-	if (-1L == handle)
-	{
-		cout << "cannot match the path" << endl;
-		return;
-	}
-	do {
-		if (file_info.attrib & _A_SUBDIR) {
-			if ((strcmp(file_info.name, "..") != 0) && (strcmp(file_info.name, ".") != 0))
-				DFS(p + '/' + file_info.name, result);
-		}
-		else {
-			cout << p << "\\" << file_info.name << endl;
-			fileRead(p + "\\" + file_info.name, result);
-		}
-	} while (_findnext(handle, &file_info) == 0);
-	_findclose(handle);
-}
 
 void folderTraverse(string p, fileProp *result) {
 	if (!dirScan(p, result))
@@ -137,6 +184,7 @@ bool isSourceFile(string p) {
 		return false;
 }
 
+
 bool isValidDir(string p) {
 	if (true == (bool)PathIsDirectory(p.c_str()))
 		return true;
@@ -145,7 +193,7 @@ bool isValidDir(string p) {
 }
 
 
-//specific statistic functions
+//statistic functions
 long charaStat(string p) {
 	long n = 0;
 	char ch;
@@ -303,10 +351,8 @@ bool cmp(const pair<string, int> &p1, const pair<string, int> &p2)
 		return false;
 	else
 		return false;
-}//compare function
+}
 
-
-//print the result on the screen and in result.txt
 void resultPrint(fileProp *result) {
 	ofstream outfile("result.txt");
 	map<string, int> ::iterator it;
