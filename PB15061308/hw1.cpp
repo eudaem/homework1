@@ -13,15 +13,15 @@
 #include<unistd.h> 
 
 using namespace std;                 
- 												//此代码为Windows版本，其中的地址需要人工辨识。 
-#define Name_Max 30    //文件名最大长度
-#define Word_Max 100    //每个单词最大长度
+ 					//This code is a Windows version, where the address needs to be identified manually. 
+#define Name_Max 30    //Maximum length of filename
+#define Word_Max 100    //Maximum length of each word
 #define pathlong 200
 
-typedef struct word        //连表 单词结构
+typedef struct word         
 {
-    char w[Word_Max];    //单词
-    int count;                //个数
+    char w[Word_Max];    //word
+    int count;                //number
     struct word *next;
 }link;
 struct top
@@ -48,19 +48,21 @@ int FileSearch(char dir[]);
 int filenumber = -1;
 int count1=0; 
 int flag=1;
-link *head=NULL;    //单词连表头
-FILE *fp=NULL;       //文件指针
+link *head=NULL;    //word list head
+FILE *fp=NULL;       //file pointer
 FILE *FP=NULL;
 int  hang_num=0,letter=0; 
 
  
-int FileSearch(char dir[])//递归遍历当前目录下的所有文件 最后文件名信息存入data[Max]里
+int FileSearch(char dir[])//Recursively traverse the final file name information of all the files 
+	                  //under the current directory into the data[Max]
 {
 	long handle;
 	_finddata_t findData;
 	char dirNew[300];
 	strcpy(dirNew, dir);
-//	strcat(dirNew, "\\*.*");   //如果是仅有一个文件，没有子目录，就需要把这句删去，在命令行写入完整路径即可。 
+	strcat(dirNew, "\\*.*");   //If there is only one file and no subdirectories, 
+	                             //it is necessary to delete this sentence and write the full path to the command line. 
 	if ((handle = _findfirst(dirNew, &findData)) == -1L)
 	{
 		printf("Failed to findfirst file");
@@ -82,7 +84,7 @@ int FileSearch(char dir[])//递归遍历当前目录下的所有文件 最后文
 		}
 		else
 		{
-			if (++filenumber <10000)//将路径入栈
+			if (++filenumber <10000) 
 			{
 				strcpy(data[filenumber].dir, dir);
 				strcat(data[filenumber].dir, "\\");
@@ -92,7 +94,7 @@ int FileSearch(char dir[])//递归遍历当前目录下的所有文件 最后文
 			}
 		}
 	}}
-	else{	if (++filenumber <10000)//将路径入栈
+	else{	if (++filenumber <10000) 
 			{
 				strcpy(data[filenumber].dir, dir);
 			 
@@ -101,7 +103,7 @@ int FileSearch(char dir[])//递归遍历当前目录下的所有文件 最后文
 			}}; 
 	_findclose(handle);
 }
-/*void FileSearch(char *szDir)
+/*void FileSearch(char *szDir)            //used in linux system to recursively traverse the final file name
 {
 	DIR *pDir = NULL;
 	struct dirent *pFile = NULL;
@@ -136,7 +138,7 @@ int FileSearch(char dir[])//递归遍历当前目录下的所有文件 最后文
 	closedir(pDir);
 }*/ 
 
-bool com(top a,top b) 
+bool com(top a,top b)              //related to sort function
 {
     if (strcmp(a.w,b.w)<0) return true;
     else return false;
@@ -149,7 +151,7 @@ bool com2(wordgroup a,wordgroup b)
 }
 
 
-void addwordgroup(char lastword[100],char currentword[100]) //边判断边加入 
+void addwordgroup(char lastword[100],char currentword[100]) //add while judge
 {
 	int i;
 	char a[100],b[100],a1[100],b1[100];
@@ -183,7 +185,7 @@ void addwordgroup(char lastword[100],char currentword[100]) //边判断边加入
 	wgtop[i].count++;
 	}
 }
-int isnotWord(char a)        //判断是否为字母
+int isnotWord(char a)        //Determine whether it is an alphabet
 {
 	if(a>=' '&&a<='~')
 	{
@@ -205,19 +207,19 @@ int isnotWord(char a)        //判断是否为字母
 
 }
 
-void addWord(char *w1)        //添加单词
+void addWord(char *w1)        //Add a word
 {
 
     link *p1,*p2;
     char str[Word_Max],str1[Word_Max];
     	sscanf(w1,"%[^0-9]",str1);
 
-    for(p1=head;p1!=NULL;p1=p1->next)    //判断单词在连表中是否存在
+    for(p1=head;p1!=NULL;p1=p1->next)    //Determine whether a word exists in a list
     {
     	sscanf(p1->w,"%[^0-9]",str);
         if(!strcmp(	strlwr(str1), strlwr(str)))
         {
-            p1->count++;   //存在就个数加1
+            p1->count++;   // added 1 if exist
             count1++;
             if(strcmp(w1,p1->w)<0)
             strcpy(p1->w,w1);
@@ -225,11 +227,11 @@ void addWord(char *w1)        //添加单词
         }
     }
 
-    p1=(struct word *)malloc(sizeof(word));//若不存在，则添加新单词
+    p1=(struct word *)malloc(sizeof(word));//If it does not exist, add a new word
     strcpy(p1->w,w1);
     p1->count=1;
     p1->next=NULL;
-    count1++;    //总的单词数加加
+    count1++;    //Total number of words added
 
     if(head==NULL)
     {
@@ -244,7 +246,7 @@ void addWord(char *w1)        //添加单词
 
 }
 
-void wordCount()    //统计单词
+void wordCount()    //word statistics
 {
     int i=0,j=0;
     char word[Word_Max],wordad[Word_Max],c;
@@ -279,16 +281,16 @@ void wordCount()    //统计单词
 
  
 
-void showWord()        //显示单词统计情况
+void showWord()        //show the result
 {
 	int i;
-     fprintf(FP,"总的单词数：%d\n",count1);
-     fprintf(FP,"总共有%d行\n",hang_num+1);
-     fprintf(FP,"总共有%d字符\n",letter);
-     fprintf(FP,"前十词频单词\t个数\n");
+     fprintf(FP,"total word numbers：%d\n",count1);
+     fprintf(FP,"total hang %d\n",hang_num+1);
+     fprintf(FP,"total characters %d \n",letter);
+     fprintf(FP,"top 10 word\tnumber\n");
       for(i=0;i<10;i++)
      fprintf(FP,"%s\t\t%d\n",topfre[i].w,topfre[i].fre); 
-    fprintf(FP,"前十词频词组\t个数\n");
+    fprintf(FP,"top 10 wordgroup\tnumber\n");
 	 for(i=0;i<10;i++)
     fprintf(FP,"%s\t\t%d\n",wgtopput[i].group,wgtopput[i].count); 
      fclose(FP);
@@ -302,7 +304,7 @@ void word_fre_put()
 	for(p=head;p!=NULL;p=p->next)
 	{    for(j=0;j<i;j++) if(strcmp(p->w,topfre[j].w)==0) {p=p->next;if(p==NULL) goto a1;j=-1;} //printf("%d",p->count);
 	     
-		if(p->count>topfre[i].fre) {topfre[i].fre=p->count;/*printf("%d",topfre.fre[i]);*/strcpy(topfre[i].w,p->w);/*printf("%s",topfre.w[i]);*/}
+		if(p->count>topfre[i].fre) {topfre[i].fre=p->count; strcpy(topfre[i].w,p->w);/*printf("%s",topfre.w[i]);*/}
 	}
    }
  a1:   sort(topfre,topfre+10,com); 
@@ -328,7 +330,7 @@ c1:	 sort(wgtopput,wgtopput+10,com2);
 
 int main()
 {
-   char dir[100]="f1.txt";
+   char dir[100]="f1.txt";          //this is  file path,if in windows environment, it is supposed to input path to "dir".
     FileSearch(dir); //printf("%d",filenumber);
        FP=fopen("result.txt","w+");   
 	for(int i=0;i<=filenumber;i++) 
@@ -342,3 +344,19 @@ int main()
 	 showWord();
     fclose(fp);
 }
+/*int main(int argc,char*argv[])          //this is in linux system. and there are some errors I only try some times on others'computer. 
+{
+   char* sZdir=argv[1];
+    FileSearch(sZdir); //printf("%d",filenumber);
+       FP=fopen("result.txt","w+");
+	for(int i=0;i<=filenumber;i++) 
+{
+	if((fp=fopen(data[i].dir,"r+"))==NULL){
+        printf("Open the file failure...\n");
+        exit(0);}
+     wordCount();}
+    showWord();
+    word_fre_put(); 
+    wordgroup_fre_put(); 
+    getchar();
+}*/
