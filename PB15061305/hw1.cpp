@@ -1,66 +1,87 @@
-// WordFrequency.cpp 
-//Author: Liu Ze
-//Mail: liuze@mail.ustc.edu.cn
-//Time: 2018.3.28 11:07
-//
-#ifdef __linux__
-#include <dirent.h>
+/* 
+	WordFrequency.cpp 
+	Author: Liu Ze
+	Sno: PB15061305
+	Mail: liuze@mail.ustc.edu.cn
+	Time: 2018.3.29 15:20
+*/
+/*	About
+		This code finish the task to count the number of characters, words, phrases and analysis them.
+		You can see a more detailed report on my blog: [http://www.cnblogs.com/Franzkfk/]
+		Or you can visit my github: [https://github.com/LiuzeGit]
+	To Build
+		Windows
+			In Windows, make sure you have preprocessor macro: WIN32,and use C++11
+		Linux
+			In Linux, make sure you have preprocessor macro: __linux__,and use C++11 like this:
+				g++ -std=c++11 WordFrequency.cpp
+			My environment: Ubuntu 16.04LTS, g++ 5.40
+	To Run
+		Windows
+			You can run like this:
+			WordFrequency.exe input-path [output-path]
+		Linux
+			You can run like this:
+			WordFrequency input-path [output-path]
+*/
+
+#ifdef __linux__ //used for Linux
+	#include <dirent.h>
 #endif
-#ifdef WIN32
-#include<io.h>
+#ifdef WIN32	//used for Windows
+	#include<io.h>
 #endif
 
-#include <fstream>  
+#include <iostream> 
+#include <fstream> 
+#include<time.h>
+
 #include <string>  
-#include <vector>  
-#include <iostream>  
+#include <vector>
 #include <map>
 #include <unordered_map> 
 #include <algorithm>
+
 using namespace std;
 
 #ifdef WIN32
-void GetAllFiles(string path, vector<string>& files)
-{
-
+void GetAllFiles(string path, vector<string>& files){	//get all file paths in Windows
+	//input: path:the file or directory path
+	//output: all files paths
 	long   hFile = 0;
 	struct _finddata_t fileinfo;
 	string p;
-	if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
-	{
+	files.push_back(path); //store the current file path
+	hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo); //judge whether the file can be open
+	if (hFile  != -1){ 
 		do
 		{
-			if ((fileinfo.attrib &  _A_SUBDIR))
-			{
-				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
-				{
+			if ((fileinfo.attrib &  _A_SUBDIR)) { //judge whether the path is a subdirectory, if so then recursively process it 
+				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
 					files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 					GetAllFiles(p.assign(path).append("\\").append(fileinfo.name), files);
 				}
 			}
-			else
-			{
+			else { // if it's not a subdirectory,then store it
 				files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 			}
 
 		} while (_findnext(hFile, &fileinfo) == 0);
-
 		_findclose(hFile);
 	}
-
 }
 #endif
 
 #ifdef __linux__
-void GetAllFiles(string path, vector<string>& files)
+void GetAllFiles(string path, vector<string>& files)//get all file paths in Linux
 {
 	string name;
-	DIR* dir = opendir(path.c_str());//打开指定目录  
-    dirent* p = NULL;//定义遍历指针  
-    while((p = readdir(dir)) != NULL)//开始逐个遍历  
+	DIR* dir = opendir(path.c_str());//Open directory 
+    dirent* p = NULL;//pointer for ergodic
+    while((p = readdir(dir)) != NULL)//start ergodic 
     {  
-        //这里需要注意，linux平台下一个目录中有"."和".."隐藏文件，需要过滤掉  
-        if(p->d_name[0] != '.')//d_name是一个char数组，存放当前遍历到的文件名  
+        //filter .. and . files
+        if(p->d_name[0] != '.')//store filename  
         {  
             string name = path + "/" + string(p->d_name);  
             files.push_back(name);
@@ -70,7 +91,7 @@ void GetAllFiles(string path, vector<string>& files)
 			}
         }  
     }  
-    closedir(dir);//关闭指定目录  
+    closedir(dir);//close
 
 }
 #endif
@@ -82,36 +103,40 @@ int HandleString(string &s) {
 	if (s.empty()) {
 		return 0;
 	}
+
 	int i = s.size() - 1;
 	char c;
-	while (i >= 0) {
+	while (i >= 0) {	//remove the last numbers
 		c = s[i];
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 			break;
 		}
 		i--;
 	}
-	
 	if (i < 0 ) {
 		s = "";
 	}
 	else {
 		s.erase(s.begin() + i + 1, s.end());
-		transform(s.begin(), s.end(), s.begin(), (int(*)(int))tolower);
+		int l = s.size();
+		for (int k = 0; k < l; k++) {//transform to lower
+			s[k] = (s[k] >= 'a' && s[k] <= 'z') ? s[k] : (s[k] + 32);
+		}
+		//transform(s.begin(), s.end(), s.begin(), (int(*)(int))tolower);	
 	}
 	return 1;
 }
 
 void display_words_map(string path, unordered_map<string, int> &words_map, unordered_map<string, string> &exp_map) {
-	//display the TOP10 words
+	//display the TOP10 words and write to file
  	vector<string> keylist(10);
 	vector<int> numlist(10);
 	vector<int>::iterator least;
-	unordered_map<string, int>::const_iterator map_it;
+	unordered_map<string, int>::const_iterator map_it; //iterator to iterate the map
 	ofstream  outpath(path, ios::app);
 
 	int count = 0, index = 0;
-	//find top10
+	//find top10: by using a 10 dimensions array to store thr big10 words and its frequency;so we can find the TOP10 by only one traversal 
 	for (map_it = words_map.begin(); map_it != words_map.end(); map_it++) {
 		if (count < 10) {
 			keylist[index] = map_it->first;
@@ -129,7 +154,7 @@ void display_words_map(string path, unordered_map<string, int> &words_map, unord
 		}
 	}
 	outpath << "the top ten frequency of word : " << endl;
-	//sort by number
+	//sort by number 
 	int i, j = 0;
 	int temp;
 	string Stemp;
@@ -228,36 +253,32 @@ void display_phrase_map(string path, unordered_map<string, int> &phrase_map, uno
 	outpath.close();
 }
 
-void Display_map(unordered_map<string, int> &wmap) {
-	//print the words map and phrase map
-	unordered_map<string, int>::const_iterator map_it;
-	for (map_it = wmap.begin(); map_it != wmap.end(); map_it++) {
-		cout << "(\"" << map_it->first << "\"," << map_it->second << ")" << endl;
-	}
-}
-
-void Display_map2(unordered_map<string, string> &wmap) {
-	//print the expression map 
-	unordered_map<string, string>::const_iterator map_it;
-	for (map_it = wmap.begin(); map_it != wmap.end(); map_it++) {
-		cout << "(\"" << map_it->first << "\"," << map_it->second << ")" << endl;
-	}
-}
-
 int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<string, int> &words_map, unordered_map<string, int> &phrase_map, unordered_map<string,string> &exp_map) {
-	fstream openfile;
+	//Count the characters, words, phrases in one file
 	char c;
-	int count = 0;
-	string st = "", sp = "", se = "";
+	int i, l;
+	int count;
+	string st = "", sp = "", se = ""; 
 	string Ss = "";
-	openfile.open(s, ios::in);
-	if (openfile.fail()) {//whether there is a file error
+	// st means the current word string(original --HandleString()---> standard) ; 
+	//se stores the original words; sp stores the previous standard string 
+	// used to represent the phrase:Ss = sp + st;
+
+	ifstream fin(s, ios::in);
+	if (!fin) {//whether there is a file error
 		return 0;
 	}
 	nline++;
-	while (openfile.get(c)) {
+	vector<char> buf(fin.seekg(0, ios::end).tellg());	//a buffer in the memory to store a file
+	fin.seekg(0, ios::beg).read(&buf[0], static_cast<streamsize>(buf.size())); 
+
+	l = buf.size();
+	i = 0;
+	count = 0; //used to detemine whether a word has more than 4 alphabet prefix
+	while (i < l) {	//iterate the file
 		//count characters
-		if (c >= 32 && c <= 126) {
+		c = buf[i];
+		if (c >= ' ' && c <= '~') {
 			nchar++;
 		}
 		else if (c == '\n') {
@@ -265,8 +286,9 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 		}
 		//count words and phrases
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+			
 			if (!(c >= '0' && c <= '9')) {
-				st += c;
+				st.push_back(c);
 				count++;
 			}
 			else if (count < 4) {
@@ -274,7 +296,7 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 				count = 0;
 			}
 			else {
-				st += c;
+				st.push_back(c);
 			}
 		}
 		else {
@@ -291,7 +313,8 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 					exp_map[st] = se;
 				}
 				if (!sp.empty()) {
-					Ss = sp + ' ' + st;
+					Ss = "";
+					Ss.append(sp).append(" ").append(st);
 					phrase_map[Ss]++;
 				}
 				sp = st;
@@ -299,10 +322,12 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 			st = "";
 			count = 0;
 		}
+		i++;
 	}
 
 	//consider that the last char is number or alphabet
 	if (!st.empty()) {
+		se = st;
 		HandleString(st);
 		if (st.size() >= 4) {
 			words_map[st]++;
@@ -314,47 +339,59 @@ int OneFileCount(string s, int &nchar, int &nline, int &nword, unordered_map<str
 				exp_map[st] = se;
 			}
 			if (!sp.empty()) {
-				Ss = sp + ' ' + st;
+				Ss = "";
+				Ss.append(sp).append(" ").append(st);
 				phrase_map[Ss]++;
 			}
 			sp = st;
 			st = "";
 		}
 	}
-	openfile.close();
+	fin.close();
 	return 1;
 
 }
 
 int main(int argc, char *argv[])
 {
-
-	string filepath = "";
-	filepath = argv[1];
-
-	string outpath = filepath + "/myresult.txt";
-	ofstream  outfile(outpath, ios::app);
-	vector<string> files;
-	GetAllFiles(filepath, files);
-	int size = files.size();
+	int size;
 	int nchar = 0;
 	int nline = 0;
 	int nword = 0;
-	unordered_map<string, int> words_map;
-	unordered_map<string, int> phrase_map;
-	unordered_map<string, string> exp_map;
+	vector<string> files;	//stores all the file path
+	clock_t startTime, endTime; // used to estimate the running time
+	unordered_map<string, int> words_map;	//hash table for: <key-value> --> <words-frequency>
+	unordered_map<string, int> phrase_map;	//hash table for: <key-value> --> <phrase-frequency>
+	unordered_map<string, string> exp_map;	//hash table for: <key-value> --> <words-little expression>
 
-	for (int i = 0; i < size; i++){
-		OneFileCount(files[i], nchar, nline, nword, words_map, phrase_map, exp_map);
+	string filepath = "";
+	filepath = argv[1]; //get the input path
+	string outpath;
+	if (argc >= 3) { //if user enter the output path
+		outpath = argv[2];
 	}
+	else {	//if not, then use the default path
+		outpath = "Result.txt";
+	}
+	
+	GetAllFiles(filepath, files);	//get all file paths
+	size = files.size();
+	startTime = clock();
+	for (int i = 0; i < size; i++){	// handle onr file
+		OneFileCount(files[i], nchar, nline, nword, words_map, phrase_map, exp_map);
 
+	}
+	// write to file the result
+	ofstream  outfile(outpath, ios::app);
 	outfile << "char_number: " << nchar << endl;
 	outfile <<"line_number: " << nline << endl;
 	outfile << "word_number: " << nword << endl << endl << endl;
 	display_words_map(outpath, words_map,exp_map);
 	display_phrase_map(outpath, phrase_map,exp_map);
 
+	endTime = clock();
+	outfile << "Totle Time : " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+
 	outfile.close();
-	cout << "ok" << endl;
 	return 0;
 }
