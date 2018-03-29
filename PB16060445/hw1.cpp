@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
 {
 	char  *p;
 	int a[NUM], b[NUM], i, j, t = 1, l = 1;
-    listDir(argv[1]);
-	fout = fopen("Result.txt", "w");
+        listDir(argv[1]);
+	fout = fopen("result.txt", "w");
 	fprintf(fout, "char_number: %d\nline_number: %d\n", characters, lines);
 	fprintf(fout, "word_number: %d\nthe top ten frequency of words: \n", words);
 
