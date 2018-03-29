@@ -259,7 +259,7 @@ void WPSort(unordered_map<string, MyWord> &mapWord, unordered_map<string, Pharze
 	unordered_map<string, MyWord>::iterator findorigin2;
 	bool isPlacew=false;									//TO judge whether word has been placed 
 	bool isPlacep = false;
-	write.open("C:\\Users\\欧阳炳濠\\Desktop\\result.txt");
+	write.open("C:\\Users\\result.txt");
 	for (int i = 0; i < 10; i++)
 	{
 		for (pharzeiter = mapPharze.begin(); pharzeiter != mapPharze.end(); pharzeiter++)
