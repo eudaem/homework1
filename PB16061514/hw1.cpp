@@ -163,9 +163,6 @@ void traverse_dir(char *path) {
 
 
 int main(int argc, char **argv) {
-	clock_t start, finish;
-	start = clock();
-
 	if (argc > 1) traverse_dir(argv[1]);
 	else return 1;
 	
@@ -190,10 +187,6 @@ int main(int argc, char **argv) {
 		result << s << "\t" << num << endl;
 	}
 	result.close();
-
-	finish = clock();
-	cout << "\n\n\ntime situation\n";
-	printf("%f seconds\n", (double)(finish - start)/ CLOCKS_PER_SEC);
 
 	return 0;
 }
