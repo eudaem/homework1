@@ -1,25 +1,54 @@
-// char count.cpp : 
-//
 
 #include "iostream"
 #include <cstring>
 #include <string>
-#include <windows.h>
+#include <string.h>
+#include <vector>
 #include <unordered_map>
 #include <time.h>
 #include <fstream>  
+#include <algorithm>  
+#include <dirent.h>
+#include <sys/stat.h>
+
+using namespace std;
+void GetAllFiles(string path, vector<string>& files);
+void GetAllFiles(string path, vector<string>& files)
+{
+
+	string name;
+	DIR* dir = opendir(path.c_str());
+	dirent* p = NULL;
+	while ((p = readdir(dir)) != NULL)
+	{
+		if (p->d_name[0] != '.')
+		{
+			string name = path + "/" + string(p->d_name);
+			files.push_back(name);
+
+			if (p->d_type == 4) {
+				GetAllFiles(name, files);
+			}
+		}
+
+	}
+	closedir(dir);
+
+}
 
 using namespace std;
 
-int getcharnum(char *filename);
+int getcharnum(string filename);
 
-void display(unordered_map<string, double> mmp, string str); //unorder_map
+void display(unordered_map<string, double> mmp, string str); 
 
-void Result(); //
+void displaydic(unordered_map<string, string> mmp, string str);
 
-void BubbleSort();	//
+void Result(); 
 
-void listFiles(const char * dir);	//
+void BubbleSort();	
+
+void listFiles(const char * dir);	
 
 int total_char_num = 0;
 
@@ -29,16 +58,18 @@ int total_word_num = 0;
 
 int tmp_num = 0;
 
-int i = 0;	//
+int i = 0;	
 
-struct dictionary          
+struct dictionary         
 {
 	string topword;
 	int num = 0;
 }*d, *p;
 
 unordered_map<string, double> dic;
+unordered_map<string, string> diction;
 unordered_map<string, double> phr;
+unordered_map<string, string> phrtion;
 
 
 
@@ -46,11 +77,27 @@ int main(int argc, char *argv[])
 {
 	clock_t start = clock();
 	int num;
-	listFiles(argv[1]);
+	//listFiles(argv[1]);
+	vector<string> files;
+	string filepath = argv[1];
+	//listFiles("C:\\newsample");
+	if (filepath.find(".") == string::npos)
+	{
+		GetAllFiles(filepath, files);
+		int size = files.size();
+		for (int g = 0; g < size; g++)
+		{
+			getcharnum(files[g]);
+		}
+	}
+	else 
+	{
+		getcharnum(filepath);
+	}
 	BubbleSort();
 	clock_t finish = clock();
 	Result();
-	double consumeTime = (double)(finish - start) / CLOCKS_PER_SEC;//
+	double consumeTime = (double)(finish - start) / CLOCKS_PER_SEC;
 	cout << "\nTime:" << consumeTime << "second！" << endl;
 	system("pause");
 	return 0;
@@ -58,7 +105,9 @@ int main(int argc, char *argv[])
 
 void Result()
 {
-	ofstream outfile("Result.txt");//
+	string bestdic;
+	string str;
+	ofstream outfile("Result.txt");
 	if (!outfile)
 	{
 		cout << "Failed to create file...\n";
@@ -70,27 +119,20 @@ void Result()
 	outfile << "\nthe top ten frequency of word :\n";
 	for (int k = 0; k < 10; k++)
 	{
-		outfile << (d + k)->topword << "\t" << (d + k)->num << endl;
+		str = (d + k)->topword;
+		unordered_map<string, string>::const_iterator got = diction.find(str);
+		bestdic = got->second;
+		outfile << bestdic << "\t" << (d + k)->num << endl;
 	}
 	outfile << "\n\nthe top ten frequency of phrase :\n";
-	for (int k = 0; k < 10; k++)
+	for (int r = 0; r < 10; r++)
 	{
-		outfile << (p + k)->topword << "\t" << (p + k)->num << endl;
+		str = (p + r)->topword;
+		unordered_map<string, string>::const_iterator gwt = phrtion.find(str);
+		bestdic = gwt->second;
+		outfile << bestdic << "\t" << (p + r)->num << endl;
 	}
 	outfile.close();
-	cout << "char_num:" << total_char_num << endl;
-	cout << "line_num:" << total_line_num << endl;
-	cout << "word_num:" << total_word_num << endl;
-	cout << "the top ten frequency of word :" << endl;
-	for (int k = 0; k < 10; k++)
-	{
-		cout << (d + k)->topword << ":" << (d + k)->num << endl;
-	}
-	cout << "the top ten frequency of phrase :" << endl;
-	for (int k = 0; k < 10; k++)
-	{
-		cout << (p + k)->topword << ":" << (p + k)->num << endl;
-	}
 }
 
 void BubbleSort()
@@ -158,60 +200,6 @@ void BubbleSort()
 	}
 }
 
-
-void listFiles(const char * dir)
-{
-	using namespace std;
-	HANDLE hFind;
-	WIN32_FIND_DATA findData;
-	LARGE_INTEGER size;
-	hFind = FindFirstFile(dir, &findData);
-	if (findData.dwFileAttributes != 16)
-	{
-		cout << "Please enter the directory path！" << endl;
-		system("pause");
-		exit(0);
-	}
-	char dirNew[100];
-
-	
-	strcpy(dirNew, dir);
-	strcat(dirNew, "\\*.*");
-
-	hFind = FindFirstFile(dirNew, &findData);
-	do
-	{
-	
-		if ((findData.dwFileAttributes == 16)
-			&& (strcmp(findData.cFileName, ".") != 0)
-			&& (strcmp(findData.cFileName, "..") != 0)
-			)
-		{
-		
-			strcpy(dirNew, dir);
-			strcat(dirNew, "\\");
-			strcat(dirNew, findData.cFileName);
-			listFiles(dirNew);
-		}
-		else if ((strcmp(findData.cFileName, ".") != 0)
-			&& (strcmp(findData.cFileName, "..") != 0)
-			)
-		{
-			strcpy(dirNew, dir);
-			strcat(dirNew, "\\");
-			strcat(dirNew, findData.cFileName);
-			tmp_num = getcharnum(dirNew);
-			total_char_num += tmp_num;
-		}
-	} while (FindNextFile(hFind, &findData));
-
-	FindClose(hFind);
-}
-
-
-
-
-
 void display(unordered_map<string, double> mmp, string str)
 {
 	cout << str << endl;
@@ -220,23 +208,44 @@ void display(unordered_map<string, double> mmp, string str)
 	cout << endl;
 }
 
-int getcharnum(char *filename)
+void displaydic(unordered_map<string, string> mmp, string str)
 {
-	FILE *fp = NULL;
+	cout << str << endl;
+	for (auto& x : mmp)
+		cout << x.first << ": " << "\t" << x.second << endl;
+	cout << endl;
+}
+
+string trans(string str)
+{
+	int len = str.length();
+	for (int e = 0; e < len; e++)
+	{
+		(str[e]) = toupper(str[e]);
+	}
+	return str;
+}
+
+int getcharnum(string filename)
+{
+	fstream openbychar;
+	openbychar.open(filename, ios::in);
+	//FILE *fp = NULL;
 	string buf;
+	string bigbuf;
 	string buff;
+	string bigbuff;
 	int p = 0;
 	int j = 0;
-	int m; //
+	int m; 
 	int flag = 1;
 	char c;
 	int num = 0;
-	if ((fp = fopen(filename, "r")) == NULL)
+	if (openbychar.fail()) 
 	{
-		perror(filename);
-		return NULL;
+		return 0; 
 	}
-	c = fgetc(fp);
+	c = openbychar.get();
 	while (c != EOF)
 	{
 		if (c == '\n')
@@ -248,8 +257,6 @@ int getcharnum(char *filename)
 				num++;
 		if (c >= 65 && c <= 90 || c >= 97 && c <= 122)
 		{
-			if (c >= 97 && c <= 122)
-				c -= 32;
 			buf += c;
 			j++;
 			m = j;
@@ -259,48 +266,83 @@ int getcharnum(char *filename)
 		{
 			if (j > 3)
 			{
-				if (!(c >= 48 && c <= 57))   // 
+				if (!(c >= 48 && c <= 57))   
 				{
 					buf.assign(buf, 0, m);
 					if (p == 0)
 					{
-						buff = buf;  //
+						buff = buf;  
 						buff += " ";
 						p = 1;
 					}
 					else
 					{
 						buff += buf;
-						unordered_map<string, double>::const_iterator got = phr.find(buff);
+						bigbuff = trans(buff);
+						unordered_map<string, string>::const_iterator gat = phrtion.find(bigbuff);
+						if (gat == phrtion.end())
+						{
+							pair<string, string> mybuf(bigbuff, buff);
+							phrtion.insert(mybuf);
+							i++;
+						}
+						else
+						{
+							string temps = gat->second;
+							if (buff < temps)
+							{
+								phrtion.at(bigbuff) = buff;
+							}
+						}
+						unordered_map<string, double>::const_iterator got = phr.find(bigbuff);
 						if (got == phr.end())
 						{
-							pair<string, double> mybuf(buff, 1);
+							pair<string, double> mybuf(bigbuff, 1);
 							phr.insert(mybuf);
 						}
 						else
 						{
 							int tempc = got->second + 1;
-							phr.at(buff) = tempc;
+							phr.at(bigbuff) = tempc;
 						}
 						buff.clear();
-						buff = buf;  //
+						bigbuff.clear();
+						buff = buf;  
 						buff += " ";
 					}
-					unordered_map<string, double>::const_iterator got = dic.find(buf);
+					bigbuf = trans(buf);
+					unordered_map<string, string>::const_iterator get = diction.find(bigbuf);
+					if (get == diction.end())
+					{
+						pair<string, string> mybuf(bigbuf, buf);
+						diction.insert(mybuf);
+						i++;
+					}
+					else
+					{
+						string temps = get->second;
+						if (buf < temps)
+						{
+							diction.at(bigbuf) = buf;
+						}
+					}
+					//displaydic(diction, "show me :");
+					unordered_map<string, double>::const_iterator got = dic.find(bigbuf);
 					if (got == dic.end())
 					{
-						pair<string, double> mybuf(buf, 1);
+						pair<string, double> mybuf(bigbuf, 1);
 						dic.insert(mybuf);
 						i++;
 					}
 					else
 					{
 						int tempc = got->second + 1;
-						dic.at(buf) = tempc;
+						dic.at(bigbuf) = tempc;
 					}
 					total_word_num++;
 					j = 0;
 					buf.clear();
+					bigbuf.clear();
 					flag = 1;
 				}
 				else
@@ -317,10 +359,11 @@ int getcharnum(char *filename)
 				flag = 1;
 			}
 		}
-		c = fgetc(fp);
+		c = openbychar.get();
 	}
-	fclose(fp);
+	openbychar.close();
 	total_line_num++;
+	total_char_num += num;
 	return num;
 }
 
