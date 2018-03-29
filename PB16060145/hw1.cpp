@@ -96,13 +96,8 @@ unsigned int Hash(string str) {
 void examineNewWord(vector<word> &wvec, word &newWord) {
 
 	string str = newWord.wordStr;
-	int i = str.length();
-	if (i >= 4 && i <= 1024) {
-		i--;
-	}
-	else {
-		return;
-	}
+	int i = str.length() - 1;
+
 	while (i >= 0) {
 		if (str[i] >= '0'&&str[i] <= '9') {
 			str[i] = '\0';
@@ -139,7 +134,7 @@ void examineNewWord(vector<word> &wvec, word &newWord) {
 void getNewExpr(string &str, vector<word> &wvec, unsigned int &wordNum) {
 
 	word newWord("\0",1);
-	string wordPattern("[[:alpha:]]{4}[[:alnum:]]*");
+	string wordPattern("[[:alpha:]]{4}[[:alnum:]]{0,1020}");
 	regex reg(wordPattern);
 
 	for (sregex_iterator it(str.begin(), str.end(), reg), end_it;
