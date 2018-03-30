@@ -305,6 +305,7 @@ int main(int argc, char *argv[])
 	int k;
 	char dir[200];
 	strcpy_s(dir,200,argv[1]);
+	listFiles(dir);
 	errno_t err;           
 	err = fopen_s(&fout, "result.out", "w");  
 	if (err == 1)
