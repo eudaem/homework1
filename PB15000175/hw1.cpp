@@ -25,13 +25,13 @@ int main(int arc,char* args[])
 	unordered_map<string,int> wordValueMap;
 	unordered_map<string,string> wordNameMap;
 
-	strcpy(dir, args[1]);
+	strcpy_s(dir, args[1]);
 	SearchFiles(dir,fileName,fileNum);
 	cout << "File Number: " << fileNum << endl;
 
 	for (i = 0; i < fileNum; i++)
 	{
-		if (!(fp = fopen(fileName[i].c_str(), "r")))
+		if (fopen_s(&fp,fileName[i].c_str(), "r")!=0)
 		{
 			cerr << "Cannot open file " << fileName[i] << endl;
 			exit(1);
@@ -63,8 +63,8 @@ void SearchFiles(char* dir,string fileName[],int& fileNum)
 	_finddata_t findData;
 	char searchdir[200],newdir[200],newfile[200];
 
-	strcpy(searchdir, dir);
-	strcat(searchdir, "\\*");
+	strcpy_s(searchdir, dir);
+	strcat_s(searchdir, "\\*");
 	handle = _findfirst(searchdir, &findData); 
 
 	if (handle == -1)
@@ -79,16 +79,16 @@ void SearchFiles(char* dir,string fileName[],int& fileNum)
 		{
 			if (findData.attrib == _A_SUBDIR)
 			{
-				strcpy(newdir, dir);
-				strcat(newdir, "\\");
-				strcat(newdir, findData.name);
+				strcpy_s(newdir, dir);
+				strcat_s(newdir, "\\");
+				strcat_s(newdir, findData.name);
 				SearchFiles(newdir,fileName,fileNum);
 			}	
 			else
 			{
-				strcpy(newfile, dir);
-				strcat(newfile, "\\");
-				strcat(newfile, findData.name);
+				strcpy_s(newfile, dir);
+				strcat_s(newfile, "\\");
+				strcat_s(newfile, findData.name);
 				fileName[fileNum]=newfile;
 				fileNum+=1;				
 			}
