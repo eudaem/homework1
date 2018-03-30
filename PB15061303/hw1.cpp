@@ -644,7 +644,7 @@ int main(int argc, char* argv[])
 			//end of getting file
 			if (FileSize != 0) {
 				line_count += 1;
-				for (int j = 0; j < FileSize; j++) {
+				for (int j = 0; j <= FileSize; j++) {
 					//operation in each File
 					//get a char and count
 					infile.get(c);
